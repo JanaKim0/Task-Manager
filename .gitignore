@@ -22,6 +22,9 @@ build/
 *.log
 npm-debug.log*
 
+# локальные настройки Claude Code (у каждого свои)
+.claude/settings.local.json
+
 # редакторы / ОС
 .DS_Store
 Thumbs.db
