@@ -1,0 +1,167 @@
+.back {
+  display: inline-block;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--accent);
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.head p {
+  margin: 0.2rem 0 0;
+  font-size: 0.9rem;
+}
+
+.head__desc {
+  margin-top: 0.5rem !important;
+}
+
+.section-title {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin: 1.75rem 0 0.75rem;
+}
+
+.members__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.member {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.7rem 0.35rem 0.35rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+.member__avatar {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.member__role {
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+
+.form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.form__wide,
+.form__actions {
+  grid-column: 1 / -1;
+}
+
+.palette {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 0.2rem;
+}
+
+.palette__dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.palette__dot--active {
+  border-color: var(--text);
+  transform: scale(1.1);
+}
+
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.project {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.project__bar {
+  height: 6px;
+}
+
+.project__body {
+  padding: 1rem 1.1rem 0.8rem;
+  flex: 1;
+}
+
+.project__title {
+  font-size: 1.02rem;
+}
+
+.project__desc {
+  margin: 0.4rem 0 0;
+  font-size: 0.87rem;
+}
+
+.project__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.1rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.8rem;
+}
+
+.empty {
+  padding: 2.5rem;
+  text-align: center;
+}
+
+.empty p {
+  margin: 0.2rem 0;
+}
+
+@media (max-width: 640px) {
+  .form {
+    grid-template-columns: 1fr;
+  }
+
+  .head {
+    flex-direction: column;
+  }
+}
