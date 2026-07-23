@@ -9,6 +9,7 @@ import {
 import { ColumnsService } from './columns.service';
 import { CreateColumnDto } from './dto/create-column.dto';
 import { UpdateColumnDto } from './dto/update-column.dto';
+import { ReorderColumnsDto } from './dto/reorder-columns.dto';
 
 @Controller('columns')
 export class ColumnsController {
@@ -18,6 +19,15 @@ export class ColumnsController {
   @Post()
   create(@Body() dto: CreateColumnDto) {
     return this.columns.create(dto);
+  }
+
+  /**
+   * PATCH /api/columns/reorder
+   * Declared before ':id' so "reorder" is not mistaken for a column id.
+   */
+  @Patch('reorder')
+  reorder(@Body() dto: ReorderColumnsDto) {
+    return this.columns.reorder(dto);
   }
 
   /** PATCH /api/columns/:id */

@@ -10,6 +10,7 @@ import {
 import { CardsService } from './cards.service';
 import { CreateCardDto } from './dto/create-card.dto';
 import { UpdateCardDto } from './dto/update-card.dto';
+import { MoveCardDto } from './dto/move-card.dto';
 
 @Controller('cards')
 export class CardsController {
@@ -37,6 +38,12 @@ export class CardsController {
   @Patch(':id/toggle')
   toggleDone(@Param('id') id: string) {
     return this.cards.toggleDone(id);
+  }
+
+  /** PATCH /api/cards/:id/move — drag & drop target position */
+  @Patch(':id/move')
+  move(@Param('id') id: string, @Body() dto: MoveCardDto) {
+    return this.cards.move(id, dto);
   }
 
   /** DELETE /api/cards/:id */

@@ -25,7 +25,10 @@ export class BoardsService {
           orderBy: { order: 'asc' },
           include: {
             cards: {
-              orderBy: [{ done: 'asc' }, { order: 'asc' }],
+              // Manual order only. Sorting finished cards to the bottom would
+              // fight with drag & drop: a card dropped at the top would jump
+              // back down the moment it was ticked.
+              orderBy: { order: 'asc' },
               include: {
                 // Checklist items are tiny, so they come with the board and
                 // the card can show "2/5" without another request.
