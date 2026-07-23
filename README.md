@@ -24,7 +24,13 @@ One language across the whole project: **TypeScript**.
 - Tick a card off as done, with a live "x of y done" counter
 - Optional deadline per card, colour-coded as overdue / today / soon
 - Four priority levels
+- Checklists inside a card, with a `2/5` progress badge on the board
+- Free-form notes on a card
+- Filter by text, priority or deadline, and hide finished cards
 - Cascading deletes: removing a workspace removes everything inside it
+
+There is no "Done" column: a card is finished when its checkbox is ticked.
+Two ways of saying the same thing would only contradict each other.
 
 ## Project layout
 
@@ -68,7 +74,9 @@ wipes it and reloads the demo data.
 ## Data model
 
 ```
-Workspace ──< Project ──< Board ──< BoardColumn ──< Card ──< Comment
+                                                        ┌──< Note
+Workspace ──< Project ──< Board ──< BoardColumn ──< Card ┤
+                                                        └──< ChecklistItem
 ```
 
 Every arrow is a one-to-many relation with `onDelete: Cascade`, so deleting a
@@ -80,5 +88,6 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for the full schema and the build plan.
 
 - [x] **Stage 1** — foundation: database schema, workspace and project API, Angular shell
 - [x] **Stage 2** — boards, columns and cards: full CRUD, done checkbox, deadlines
-- [ ] **Stage 3** — comments and filtering
+- [x] **Stage 3** — notes, checklists and board filters
 - [ ] **Stage 4** — drag & drop, polish, deployment
+- [ ] **Stage 5** — desktop app: a double-clickable icon instead of a localhost URL

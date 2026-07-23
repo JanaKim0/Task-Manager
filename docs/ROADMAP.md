@@ -1,6 +1,6 @@
 # Task Manager — build plan
 
-Four stages. Each one ends in a working state worth pushing to GitHub.
+Five stages. Each one ends in a working state worth pushing to GitHub.
 
 ---
 
@@ -37,18 +37,23 @@ optimistic UI updates, date handling between the browser and the API.
 
 ---
 
-## Stage 3 — Comments and filtering
+## Stage 3 — Notes, checklists and filtering ✅
 
 Make a card a full task and make a busy board readable.
 
-- [ ] Comment API: `GET/POST/DELETE /api/cards/:id/comments`
-- [ ] Comment list inside the card editor
-- [ ] Filter bar: by text, priority, deadline, done / not done
-- [ ] Filtering with `computed` signals, no extra API calls
-- [ ] "Hide completed cards" toggle
-- [ ] Empty state when a filter matches nothing
+- [x] `Comment` renamed to `Note` — with one user there is no conversation
+- [x] Note API: `POST /api/notes`, `DELETE /api/notes/:id`
+- [x] Note list inside the card editor, newest first
+- [x] `ChecklistItem` model: sub-tasks ticked independently of the card
+- [x] Checklist API including `PATCH /api/checklist/:id/toggle`
+- [x] `2/5` progress badge on the card, green once every step is ticked
+- [x] Filter bar: text search, priority, deadline, "hide done"
+- [x] Filtering with `computed` signals — no API call per keystroke
+- [x] Empty state when a filter matches nothing
+- [x] Default boards dropped the "Done" column
 
-**To learn:** derived state, more complex template logic, query parameters.
+**Learned:** derived state with `computed`, keeping two copies of the same
+data in step (the dialog and the board badge), three-state optional fields.
 
 ---
 
@@ -65,6 +70,23 @@ Make a card a full task and make a busy board readable.
 
 ---
 
+## Stage 5 — Desktop app
+
+The point of this stage is daily use: an icon on the desktop instead of
+starting two terminals and typing a localhost URL.
+
+- [ ] Wrap the app with Electron (or Tauri, if the smaller size wins)
+- [ ] Run the API inside the desktop process, not as a separate terminal
+- [ ] Move the database to the user's app-data folder so an update cannot
+      wipe the tasks
+- [ ] Build a Windows installer, add an icon
+- [ ] Remember window size and position between launches
+
+**To learn:** packaging, the difference between a dev server and a shipped
+binary, where a desktop app is allowed to store user data.
+
+---
+
 ## Database schema
 
 ```
@@ -73,7 +95,8 @@ Workspace
           └──< Board
                  └──< BoardColumn
                         └──< Card
-                               └──< Comment
+                               ├──< Note
+                               └──< ChecklistItem
 ```
 
 | Model | Key fields | Notes |
@@ -83,10 +106,20 @@ Workspace
 | `Board` | name, order | belongs to a project |
 | `BoardColumn` | name, order | named `BoardColumn` because `Column` is reserved in SQL |
 | `Card` | title, description, order, dueDate?, priority, done, completedAt? | `dueDate` is nullable — a card without a deadline is normal |
-| `Comment` | body, createdAt | no author: single-user app |
+| `Note` | body, createdAt | no author: single-user app |
+| `ChecklistItem` | text, done, order | a sub-task, ticked separately from the card |
 
 Every relation uses `onDelete: Cascade`, so deleting a workspace removes its
 projects, boards, columns, cards and comments in one step.
+
+### Why there is no "Done" column
+
+A card can be finished in exactly one way: its checkbox is ticked. Boards
+used to ship with a third column called "Done", which meant the app had two
+competing answers to "is this task finished?" — a card could sit in "To do"
+with a ticked box, or in "Done" without one. The checkbox won because it
+also drives the progress counter, and the filter bar can hide finished cards
+on demand. Custom columns are still free to be called anything.
 
 ### Why there are no users
 
