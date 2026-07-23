@@ -1,8 +1,8 @@
 import { Global, Module } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 
-// @Global() — модуль импортируется один раз в AppModule,
-// а PrismaService становится доступен во всех остальных модулях.
+// @Global() — imported once in AppModule, then PrismaService is available
+// in every other module without importing it again.
 @Global()
 @Module({
   providers: [PrismaService],

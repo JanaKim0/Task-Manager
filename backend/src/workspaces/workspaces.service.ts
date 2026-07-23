@@ -15,8 +15,8 @@ export class WorkspacesService {
   findAll() {
     return this.prisma.workspace.findMany({
       orderBy: { createdAt: 'asc' },
-      // _count даёт количество связанных записей без их загрузки
-      include: { _count: { select: { projects: true, members: true } } },
+      // _count returns the number of related rows without loading them.
+      include: { _count: { select: { projects: true } } },
     });
   }
 
@@ -28,12 +28,11 @@ export class WorkspacesService {
           orderBy: { createdAt: 'asc' },
           include: { _count: { select: { boards: true } } },
         },
-        members: { include: { user: true } },
       },
     });
 
     if (!workspace) {
-      throw new NotFoundException(`Рабочее пространство ${id} не найдено`);
+      throw new NotFoundException(`Workspace ${id} not found`);
     }
     return workspace;
   }
@@ -57,24 +56,24 @@ export class WorkspacesService {
 
   async remove(id: string) {
     await this.ensureExists(id);
-    // Каскад из схемы удалит проекты, доски, колонки и карточки.
+    // The cascade rules in the schema delete projects, boards, columns and cards.
     return this.prisma.workspace.delete({ where: { id } });
   }
 
   private async ensureExists(id: string) {
     const count = await this.prisma.workspace.count({ where: { id } });
     if (count === 0) {
-      throw new NotFoundException(`Рабочее пространство ${id} не найдено`);
+      throw new NotFoundException(`Workspace ${id} not found`);
     }
   }
 
-  /** Превращает ошибку уникальности Prisma в понятный HTTP-ответ 409. */
+  /** Turns a Prisma unique-constraint error into a readable HTTP 409. */
   private toHttpError(error: unknown, slug?: string) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2002'
     ) {
-      return new ConflictException(`Пространство со slug "${slug}" уже есть`);
+      return new ConflictException(`Slug "${slug}" is already taken`);
     }
     return error;
   }

@@ -2,8 +2,8 @@ import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 /**
- * Обёртка над PrismaClient, чтобы подключение к базе жило столько же,
- * сколько само приложение, и его можно было внедрять в любой сервис.
+ * Wraps PrismaClient so the database connection lives as long as the app
+ * and can be injected into any service.
  */
 @Injectable()
 export class PrismaService

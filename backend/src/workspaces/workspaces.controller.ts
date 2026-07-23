@@ -21,7 +21,7 @@ export class WorkspacesController {
     return this.workspaces.findAll();
   }
 
-  /** GET /api/workspaces/:id — вместе с проектами и участниками */
+  /** GET /api/workspaces/:id — including its projects */
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.workspaces.findOne(id);

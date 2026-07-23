@@ -1,5 +1,8 @@
-// Схема базы данных Task Manager.
-// После изменений: npx prisma migrate dev --name <название_изменения>
+// Task Manager database schema.
+// After editing this file run: npx prisma migrate dev --name <change_name>
+//
+// This is a single-user application: there are no accounts, members or
+// assignees. Everything belongs to the person running the app.
 
 generator client {
   provider = "prisma-client-js"
@@ -10,21 +13,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ---------- Пользователи ----------
-
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String
-  avatarUrl String?
-  createdAt DateTime @default(now())
-
-  memberships Membership[]
-  comments    Comment[]
-  assignments CardAssignee[]
-}
-
-// ---------- Рабочие пространства ----------
+// ---------- Workspaces ----------
 
 model Workspace {
   id          String   @id @default(uuid())
@@ -34,37 +23,16 @@ model Workspace {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  members  Membership[]
   projects Project[]
 }
 
-enum Role {
-  OWNER
-  ADMIN
-  MEMBER
-}
-
-// Связь многие-ко-многим между User и Workspace с ролью участника.
-model Membership {
-  id          String @id @default(uuid())
-  role        Role   @default(MEMBER)
-  userId      String
-  workspaceId String
-
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
-  // один пользователь — одно членство в пространстве
-  @@unique([userId, workspaceId])
-}
-
-// ---------- Проекты и доски ----------
+// ---------- Projects and boards ----------
 
 model Project {
   id          String   @id @default(uuid())
   name        String
   description String?
-  color       String   @default("#4f46e5")
+  color       String   @default("#e8749c")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -87,7 +55,7 @@ model Board {
   columns BoardColumn[]
 }
 
-// "Column" — зарезервированное слово в SQL, поэтому модель названа BoardColumn.
+// "Column" is a reserved SQL keyword, hence the BoardColumn name.
 model BoardColumn {
   id        String   @id @default(uuid())
   name      String
@@ -100,7 +68,7 @@ model BoardColumn {
   cards Card[]
 }
 
-// ---------- Карточки ----------
+// ---------- Cards ----------
 
 enum Priority {
   LOW
@@ -114,18 +82,21 @@ model Card {
   title       String
   description String?
   order       Int       @default(0)
+  // Deadline is optional: a card without a date is simply undated.
   dueDate     DateTime?
   priority    Priority  @default(MEDIUM)
+  done        Boolean   @default(false)
+  completedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   columnId String
   column   BoardColumn @relation(fields: [columnId], references: [id], onDelete: Cascade)
 
-  comments  Comment[]
-  assignees CardAssignee[]
+  comments Comment[]
 }
 
+// Notes attached to a card. No author: there is only one user.
 model Comment {
   id        String   @id @default(uuid())
   body      String
@@ -133,21 +104,4 @@ model Comment {
 
   cardId String
   card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
-
-  authorId String
-  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
-}
-
-// Связь многие-ко-многим: кто назначен исполнителем карточки.
-model CardAssignee {
-  id         String   @id @default(uuid())
-  assignedAt DateTime @default(now())
-
-  cardId String
-  card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([cardId, userId])
 }

@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
@@ -7,7 +11,7 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 export class ProjectsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Все проекты, при указании workspaceId — только внутри одного пространства. */
+  /** All projects, or only those inside one workspace when an id is given. */
   findAll(workspaceId?: string) {
     return this.prisma.project.findMany({
       where: workspaceId ? { workspaceId } : undefined,
@@ -29,23 +33,43 @@ export class ProjectsService {
     });
 
     if (!project) {
-      throw new NotFoundException(`Проект ${id} не найден`);
+      throw new NotFoundException(`Project ${id} not found`);
     }
     return project;
   }
 
   async create(dto: CreateProjectDto) {
-    // Проверяем родителя заранее, чтобы вернуть 400, а не ошибку внешнего ключа.
+    // Check the parent up front so we return a clear 400 instead of a
+    // raw foreign-key error from the database.
     const exists = await this.prisma.workspace.count({
       where: { id: dto.workspaceId },
     });
     if (exists === 0) {
       throw new BadRequestException(
-        `Рабочее пространство ${dto.workspaceId} не существует`,
+        `Workspace ${dto.workspaceId} does not exist`,
       );
     }
 
-    return this.prisma.project.create({ data: dto });
+    const project = await this.prisma.project.create({ data: dto });
+
+    // Every project gets a default board with three columns, so the user
+    // never lands on an empty screen.
+    await this.prisma.board.create({
+      data: {
+        name: 'Main board',
+        order: 0,
+        projectId: project.id,
+        columns: {
+          create: [
+            { name: 'To do', order: 0 },
+            { name: 'In progress', order: 1 },
+            { name: 'Done', order: 2 },
+          ],
+        },
+      },
+    });
+
+    return this.findOne(project.id);
   }
 
   async update(id: string, dto: UpdateProjectDto) {
@@ -61,7 +85,7 @@ export class ProjectsService {
   private async ensureExists(id: string) {
     const count = await this.prisma.project.count({ where: { id } });
     if (count === 0) {
-      throw new NotFoundException(`Проект ${id} не найден`);
+      throw new NotFoundException(`Project ${id} not found`);
     }
   }
 }
