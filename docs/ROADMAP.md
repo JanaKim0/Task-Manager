@@ -1,99 +1,95 @@
-# План разработки Task Manager
+# Task Manager — build plan
 
-Проект разбит на 4 этапа. Каждый этап заканчивается рабочим состоянием,
-которое можно показать и запушить на GitHub.
-
----
-
-## Этап 1 — Фундамент ✅
-
-**Цель:** есть репозиторий, база данных со всеми сущностями и первый сквозной
-путь «БД → API → экран в браузере».
-
-- [x] Git-репозиторий, `.gitignore`, README
-- [x] Каркас NestJS (backend) и Angular (frontend)
-- [x] Prisma-схема: User, Workspace, Membership, Project, Board, Column, Card, Comment, CardAssignee
-- [x] Первая миграция + сид-данные (тестовый пользователь, пространство, проект)
-- [x] REST API: `/workspaces` и `/projects` (полный CRUD)
-- [x] Angular: роутинг, сервисы-обёртки над HTTP, экран списка пространств и проектов
-
-**Что осваивается:** связи один-ко-многим и многие-ко-многим, миграции,
-DTO и валидация, HttpClient, standalone-компоненты, роутинг с параметрами.
+Four stages. Each one ends in a working state worth pushing to GitHub.
 
 ---
 
-## Этап 2 — Доски, колонки, карточки
+## Stage 1 — Foundation ✅
 
-**Цель:** открыть проект → увидеть доску с колонками и карточками, создавать
-и редактировать их.
+Repository, database, and the first end-to-end path: database → API → screen.
 
-- [ ] API: `/boards`, `/columns`, `/cards` (CRUD)
-- [ ] Поле `order` у колонок и карточек + сортировка
-- [ ] Вложенная загрузка: доска отдаёт колонки вместе с карточками одним запросом
-- [ ] Компонент `BoardPageComponent` — горизонтальная раскладка колонок
-- [ ] Компоненты `ColumnComponent`, `CardComponent`
-- [ ] Модальное окно создания/редактирования карточки
+- [x] Git repository, `.gitignore`, README
+- [x] NestJS backend and Angular frontend scaffolding
+- [x] Prisma schema, first migration, seed script
+- [x] REST API for workspaces and projects with DTO validation
+- [x] Angular routing, HTTP services, workspace list and workspace detail screens
 
-**Что осваивается:** вложенные связи в Prisma (`include`), большие компоненты,
-`@Input`/`@Output`, реактивные формы.
+**Learned:** one-to-many relations, migrations, DTO validation, HttpClient,
+standalone components, route parameters.
 
 ---
 
-## Этап 3 — Люди, сроки, приоритеты, фильтр
+## Stage 2 — Boards, columns and cards ✅
 
-**Цель:** карточка становится полноценной задачей.
+Open a project, see its board, manage the work on it.
 
-- [ ] API: назначение исполнителей (`CardAssignee`), комментарии (`Comment`)
-- [ ] Поля `dueDate` и `priority` в UI: выбор даты, цветовые метки приоритета
-- [ ] Подсветка просроченных дедлайнов
-- [ ] Панель фильтров: по исполнителю, приоритету, сроку, тексту
-- [ ] Фильтрация через сигналы Angular (`computed`)
+- [x] `GET /api/boards/:id` returns columns and their cards in one request
+- [x] Column API: create, rename, delete
+- [x] Card API: create, edit, delete, and `PATCH /cards/:id/toggle` for done
+- [x] Every new project is created with a default board and three columns
+- [x] Board screen with columns, cards and an inline add-card input
+- [x] Card editor: title, description, priority, optional deadline
+- [x] Done checkbox with a strike-through style and a progress counter
+- [x] Deadline badges coloured by urgency
 
-**Что осваивается:** связь многие-ко-многим через промежуточную таблицу,
-работа с датами, производное состояние (`signal` / `computed`).
-
----
-
-## Этап 4 — Drag & Drop и финал
-
-**Цель:** карточки перетаскиваются мышью, проект выглядит законченным.
-
-- [ ] Angular CDK `DragDropModule`: перетаскивание карточек между колонками
-- [ ] Перетаскивание самих колонок
-- [ ] API `PATCH /cards/:id/move` — сохранение новой позиции
-- [ ] Оптимистичное обновление UI + откат при ошибке
-- [ ] Адаптивная вёрстка, состояния загрузки и пустых списков
-- [ ] Деплой: backend на Render, frontend на Vercel, БД PostgreSQL
-
-**Что осваивается:** CDK, пересчёт порядка элементов, обработка ошибок сети.
+**Learned:** nested `include` queries, large components, signals and `computed`,
+optimistic UI updates, date handling between the browser and the API.
 
 ---
 
-## Схема базы данных
+## Stage 3 — Comments and filtering
+
+Make a card a full task and make a busy board readable.
+
+- [ ] Comment API: `GET/POST/DELETE /api/cards/:id/comments`
+- [ ] Comment list inside the card editor
+- [ ] Filter bar: by text, priority, deadline, done / not done
+- [ ] Filtering with `computed` signals, no extra API calls
+- [ ] "Hide completed cards" toggle
+- [ ] Empty state when a filter matches nothing
+
+**To learn:** derived state, more complex template logic, query parameters.
+
+---
+
+## Stage 4 — Drag & drop and release
+
+- [ ] Angular CDK `DragDropModule`: drag cards between columns
+- [ ] Drag columns to reorder them
+- [ ] Persist the new position through the API
+- [ ] Optimistic updates with rollback on failure
+- [ ] Responsive layout and loading skeletons
+- [ ] Deploy: backend on Render, frontend on Vercel, PostgreSQL database
+
+**To learn:** the CDK, recalculating sort order, error recovery.
+
+---
+
+## Database schema
 
 ```
-User
- ├──< Membership >──── Workspace
- ├──< Comment              │
- └──< CardAssignee         └──< Project
-                                 └──< Board
-                                       └──< Column
-                                             └──< Card
-                                                   ├──< Comment
-                                                   └──< CardAssignee
+Workspace
+   └──< Project
+          └──< Board
+                 └──< BoardColumn
+                        └──< Card
+                               └──< Comment
 ```
 
-| Сущность | Ключевые поля | Связи |
+| Model | Key fields | Notes |
 |---|---|---|
-| `User` | email, name | членства, комментарии, назначения |
-| `Workspace` | name, slug | → проекты, участники |
-| `Membership` | role (OWNER/ADMIN/MEMBER) | User ↔ Workspace |
-| `Project` | name, description | → доски |
-| `Board` | name, order | → колонки |
-| `Column` | name, order | → карточки |
-| `Card` | title, description, order, dueDate, priority | → комментарии, исполнители |
-| `Comment` | body | Card, User |
-| `CardAssignee` | — | Card ↔ User |
+| `Workspace` | name, slug (unique), description | top level |
+| `Project` | name, description, color | belongs to a workspace |
+| `Board` | name, order | belongs to a project |
+| `BoardColumn` | name, order | named `BoardColumn` because `Column` is reserved in SQL |
+| `Card` | title, description, order, dueDate?, priority, done, completedAt? | `dueDate` is nullable — a card without a deadline is normal |
+| `Comment` | body, createdAt | no author: single-user app |
 
-Каскадное удаление включено сверху вниз: удаление пространства удаляет проекты,
-доски, колонки и карточки.
+Every relation uses `onDelete: Cascade`, so deleting a workspace removes its
+projects, boards, columns, cards and comments in one step.
+
+### Why there are no users
+
+The first draft had `User`, `Membership` and `CardAssignee` tables. They were
+removed in `simplify_to_single_user`: this is a personal planner, so accounts
+and assignees added schema complexity without adding anything usable.
