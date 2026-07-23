@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { WorkspaceService } from '../../core/workspace.service';
 import { ProjectService } from '../../core/project.service';
 import { Project, Workspace } from '../../core/models';
+import { readHttpError } from '../../core/http-error';
 
 @Component({
   selector: 'app-workspace-detail',
@@ -13,8 +14,8 @@ import { Project, Workspace } from '../../core/models';
   styleUrl: './workspace-detail.scss',
 })
 export class WorkspaceDetailComponent implements OnInit {
-  // Значение приходит из маршрута /workspaces/:id благодаря
-  // withComponentInputBinding() в app.config.ts
+  // Comes from the /workspaces/:id route thanks to withComponentInputBinding()
+  // in app.config.ts.
   @Input() id!: string;
 
   private readonly workspacesApi = inject(WorkspaceService);
@@ -27,14 +28,15 @@ export class WorkspaceDetailComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly formOpen = signal(false);
   readonly saving = signal(false);
+  readonly editingId = signal<string | null>(null);
 
   readonly palette = [
-    '#4f46e5',
-    '#059669',
-    '#dc2626',
-    '#d97706',
-    '#0891b2',
-    '#7c3aed',
+    '#e8749c',
+    '#c98bc0',
+    '#f0a868',
+    '#7cc4a4',
+    '#7fa8d4',
+    '#b6a3e0',
   ];
 
   readonly form = this.fb.nonNullable.group({
@@ -58,17 +60,34 @@ export class WorkspaceDetailComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err: HttpErrorResponse) => {
-        this.error.set(this.readError(err));
+        this.error.set(readHttpError(err));
         this.loading.set(false);
       },
     });
   }
 
-  toggleForm(): void {
-    this.formOpen.update((open) => !open);
-    if (!this.formOpen()) {
-      this.form.reset({ color: this.palette[0] });
-    }
+  /** Opens the form empty for a new project. */
+  openCreate(): void {
+    this.editingId.set(null);
+    this.form.reset({ color: this.palette[0] });
+    this.formOpen.set(true);
+  }
+
+  /** Opens the same form pre-filled to edit an existing project. */
+  openEdit(project: Project): void {
+    this.editingId.set(project.id);
+    this.form.setValue({
+      name: project.name,
+      description: project.description ?? '',
+      color: project.color,
+    });
+    this.formOpen.set(true);
+  }
+
+  closeForm(): void {
+    this.formOpen.set(false);
+    this.editingId.set(null);
+    this.form.reset({ color: this.palette[0] });
   }
 
   pickColor(color: string): void {
@@ -84,59 +103,54 @@ export class WorkspaceDetailComponent implements OnInit {
     this.saving.set(true);
     this.error.set(null);
     const { name, description, color } = this.form.getRawValue();
+    const editingId = this.editingId();
 
-    this.projectsApi
-      .create({
-        name,
-        description: description || undefined,
-        color,
-        workspaceId: this.id,
-      })
-      .subscribe({
-        next: (created) => {
-          this.projects.update((list) => [
-            ...list,
-            { ...created, _count: { boards: 0 } },
-          ]);
-          this.form.reset({ color: this.palette[0] });
-          this.formOpen.set(false);
-          this.saving.set(false);
-        },
-        error: (err: HttpErrorResponse) => {
-          this.error.set(this.readError(err));
-          this.saving.set(false);
-        },
-      });
+    const request = editingId
+      ? this.projectsApi.update(editingId, {
+          name,
+          description: description || undefined,
+          color,
+        })
+      : this.projectsApi.create({
+          name,
+          description: description || undefined,
+          color,
+          workspaceId: this.id,
+        });
+
+    request.subscribe({
+      next: (saved) => {
+        if (editingId) {
+          this.projects.update((list) =>
+            list.map((p) => (p.id === editingId ? { ...p, ...saved } : p)),
+          );
+        } else {
+          this.projects.update((list) => [...list, saved]);
+        }
+        this.closeForm();
+        this.saving.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.error.set(readHttpError(err));
+        this.saving.set(false);
+      },
+    });
   }
 
   remove(project: Project): void {
-    if (!confirm(`Удалить проект «${project.name}» со всеми досками?`)) {
+    if (!confirm(`Delete project "${project.name}" and all its boards?`)) {
       return;
     }
 
     this.projectsApi.remove(project.id).subscribe({
       next: () =>
-        this.projects.update((list) =>
-          list.filter((p) => p.id !== project.id),
-        ),
-      error: (err: HttpErrorResponse) => this.error.set(this.readError(err)),
+        this.projects.update((list) => list.filter((p) => p.id !== project.id)),
+      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err)),
     });
   }
 
-  private readError(err: HttpErrorResponse): string {
-    if (err.status === 0) {
-      return 'Нет связи с сервером. Запущен ли backend на порту 3000?';
-    }
-    if (err.status === 404) {
-      return 'Рабочее пространство не найдено';
-    }
-    const message: unknown = err.error?.message;
-    if (Array.isArray(message)) {
-      return message.join('. ');
-    }
-    if (typeof message === 'string') {
-      return message;
-    }
-    return 'Что-то пошло не так';
+  /** Every project is created with a default board; this returns its id. */
+  firstBoardId(project: Project): string | null {
+    return project.boards?.[0]?.id ?? null;
   }
 }

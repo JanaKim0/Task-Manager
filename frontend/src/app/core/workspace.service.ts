@@ -2,15 +2,11 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import {
-  CreateWorkspaceDto,
-  UpdateWorkspaceDto,
-  Workspace,
-} from './models';
+import { CreateWorkspaceDto, UpdateWorkspaceDto, Workspace } from './models';
 
 /**
- * Все обращения к /api/workspaces собраны здесь.
- * Компоненты не знают про URL и HttpClient — только про этот сервис.
+ * Every call to /api/workspaces lives here, so components never deal with
+ * URLs or HttpClient directly.
  */
 @Injectable({ providedIn: 'root' })
 export class WorkspaceService {

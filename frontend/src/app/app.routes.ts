@@ -7,9 +7,10 @@ export const routes: Routes = [
     redirectTo: 'workspaces',
   },
   {
-    // loadComponent — компонент подгружается только когда открыли маршрут
+    // loadComponent: the code for this screen is downloaded only when the
+    // user actually opens the route.
     path: 'workspaces',
-    title: 'Рабочие пространства',
+    title: 'Workspaces — Task Manager',
     loadComponent: () =>
       import('./pages/workspace-list/workspace-list').then(
         (m) => m.WorkspaceListComponent,
@@ -17,11 +18,17 @@ export const routes: Routes = [
   },
   {
     path: 'workspaces/:id',
-    title: 'Пространство',
+    title: 'Workspace — Task Manager',
     loadComponent: () =>
       import('./pages/workspace-detail/workspace-detail').then(
         (m) => m.WorkspaceDetailComponent,
       ),
+  },
+  {
+    path: 'boards/:id',
+    title: 'Board — Task Manager',
+    loadComponent: () =>
+      import('./pages/board/board').then((m) => m.BoardComponent),
   },
   {
     path: '**',

@@ -1,13 +1,10 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import {
-  FormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { WorkspaceService } from '../../core/workspace.service';
 import { Workspace } from '../../core/models';
+import { readHttpError } from '../../core/http-error';
 
 @Component({
   selector: 'app-workspace-list',
@@ -19,7 +16,7 @@ export class WorkspaceListComponent implements OnInit {
   private readonly api = inject(WorkspaceService);
   private readonly fb = inject(FormBuilder);
 
-  // signal — реактивное значение: меняем через .set(), шаблон сам перерисуется
+  // A signal is a reactive box: call .set() and the template redraws itself.
   readonly workspaces = signal<Workspace[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
@@ -28,10 +25,7 @@ export class WorkspaceListComponent implements OnInit {
 
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
-    slug: [
-      '',
-      [Validators.required, Validators.pattern(/^[a-z0-9-]+$/)],
-    ],
+    slug: ['', [Validators.required, Validators.pattern(/^[a-z0-9-]+$/)]],
     description: [''],
   });
 
@@ -49,7 +43,7 @@ export class WorkspaceListComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err: HttpErrorResponse) => {
-        this.error.set(this.readError(err));
+        this.error.set(readHttpError(err));
         this.loading.set(false);
       },
     });
@@ -62,7 +56,7 @@ export class WorkspaceListComponent implements OnInit {
     }
   }
 
-  /** Подставляет slug из названия, пока пользователь его не правил вручную. */
+  /** Fills the slug from the name until the user edits the slug themselves. */
   onNameInput(): void {
     const slugControl = this.form.controls.slug;
     if (slugControl.dirty) {
@@ -85,17 +79,17 @@ export class WorkspaceListComponent implements OnInit {
       .create({ name, slug, description: description || undefined })
       .subscribe({
         next: (created) => {
-          // _count с сервера при создании не приходит — дорисовываем нулями
+          // The create response has no _count, so we add an empty one.
           this.workspaces.update((list) => [
             ...list,
-            { ...created, _count: { projects: 0, members: 0 } },
+            { ...created, _count: { projects: 0 } },
           ]);
           this.form.reset();
           this.formOpen.set(false);
           this.saving.set(false);
         },
         error: (err: HttpErrorResponse) => {
-          this.error.set(this.readError(err));
+          this.error.set(readHttpError(err));
           this.saving.set(false);
         },
       });
@@ -103,7 +97,7 @@ export class WorkspaceListComponent implements OnInit {
 
   remove(workspace: Workspace): void {
     const ok = confirm(
-      `Удалить «${workspace.name}»? Вместе с ним удалятся все проекты и доски.`,
+      `Delete "${workspace.name}"? All its projects and boards go with it.`,
     );
     if (!ok) {
       return;
@@ -114,10 +108,11 @@ export class WorkspaceListComponent implements OnInit {
         this.workspaces.update((list) =>
           list.filter((w) => w.id !== workspace.id),
         ),
-      error: (err: HttpErrorResponse) => this.error.set(this.readError(err)),
+      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err)),
     });
   }
 
+  /** Latin transliteration so Cyrillic names still produce a usable slug. */
   private toSlug(value: string): string {
     const map: Record<string, string> = {
       а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh',
@@ -134,20 +129,5 @@ export class WorkspaceListComponent implements OnInit {
       .join('')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
-  }
-
-  /** Достаёт текст ошибки из ответа Nest (там message — строка или массив). */
-  private readError(err: HttpErrorResponse): string {
-    if (err.status === 0) {
-      return 'Нет связи с сервером. Запущен ли backend на порту 3000?';
-    }
-    const message: unknown = err.error?.message;
-    if (Array.isArray(message)) {
-      return message.join('. ');
-    }
-    if (typeof message === 'string') {
-      return message;
-    }
-    return 'Что-то пошло не так';
   }
 }
