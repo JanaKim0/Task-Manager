@@ -1,0 +1,153 @@
+// Схема базы данных Task Manager.
+// После изменений: npx prisma migrate dev --name <название_изменения>
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Пользователи ----------
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  avatarUrl String?
+  createdAt DateTime @default(now())
+
+  memberships Membership[]
+  comments    Comment[]
+  assignments CardAssignee[]
+}
+
+// ---------- Рабочие пространства ----------
+
+model Workspace {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members  Membership[]
+  projects Project[]
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+// Связь многие-ко-многим между User и Workspace с ролью участника.
+model Membership {
+  id          String @id @default(uuid())
+  role        Role   @default(MEMBER)
+  userId      String
+  workspaceId String
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // один пользователь — одно членство в пространстве
+  @@unique([userId, workspaceId])
+}
+
+// ---------- Проекты и доски ----------
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  color       String   @default("#4f46e5")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  boards Board[]
+}
+
+model Board {
+  id        String   @id @default(uuid())
+  name      String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  columns BoardColumn[]
+}
+
+// "Column" — зарезервированное слово в SQL, поэтому модель названа BoardColumn.
+model BoardColumn {
+  id        String   @id @default(uuid())
+  name      String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  boardId String
+  board   Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  cards Card[]
+}
+
+// ---------- Карточки ----------
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Card {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  order       Int       @default(0)
+  dueDate     DateTime?
+  priority    Priority  @default(MEDIUM)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  columnId String
+  column   BoardColumn @relation(fields: [columnId], references: [id], onDelete: Cascade)
+
+  comments  Comment[]
+  assignees CardAssignee[]
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  body      String
+  createdAt DateTime @default(now())
+
+  cardId String
+  card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+// Связь многие-ко-многим: кто назначен исполнителем карточки.
+model CardAssignee {
+  id         String   @id @default(uuid())
+  assignedAt DateTime @default(now())
+
+  cardId String
+  card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, userId])
+}
