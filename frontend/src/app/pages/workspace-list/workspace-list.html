@@ -1,0 +1,91 @@
+<section class="head">
+  <div>
+    <h1>Рабочие пространства</h1>
+    <p class="muted">Верхний уровень: внутри пространств живут проекты и доски.</p>
+  </div>
+  <button class="btn btn--primary" type="button" (click)="toggleForm()">
+    {{ formOpen() ? 'Отмена' : '+ Новое пространство' }}
+  </button>
+</section>
+
+@if (error()) {
+  <p class="error-text">{{ error() }}</p>
+}
+
+@if (formOpen()) {
+  <form class="card form" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="field">
+      <label for="name">Название</label>
+      <input
+        id="name"
+        formControlName="name"
+        placeholder="Например, Личное"
+        (input)="onNameInput()"
+      />
+      @if (form.controls.name.touched && form.controls.name.invalid) {
+        <span class="error-text">Минимум 2 символа</span>
+      }
+    </div>
+
+    <div class="field">
+      <label for="slug">Короткий адрес (slug)</label>
+      <input id="slug" formControlName="slug" placeholder="personal" />
+      @if (form.controls.slug.touched && form.controls.slug.invalid) {
+        <span class="error-text">Только a-z, цифры и дефис</span>
+      }
+    </div>
+
+    <div class="field form__wide">
+      <label for="description">Описание</label>
+      <textarea
+        id="description"
+        formControlName="description"
+        rows="2"
+        placeholder="Необязательно"
+      ></textarea>
+    </div>
+
+    <div class="form__actions">
+      <button class="btn btn--primary" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Сохраняю...' : 'Создать' }}
+      </button>
+    </div>
+  </form>
+}
+
+@if (loading()) {
+  <p class="muted">Загрузка...</p>
+} @else if (workspaces().length === 0) {
+  <div class="card empty">
+    <p>Пока пусто.</p>
+    <p class="muted">Создайте первое рабочее пространство.</p>
+  </div>
+} @else {
+  <ul class="grid">
+    @for (workspace of workspaces(); track workspace.id) {
+      <li class="card ws">
+        <a class="ws__link" [routerLink]="['/workspaces', workspace.id]">
+          <h2 class="ws__title">{{ workspace.name }}</h2>
+          <p class="ws__slug muted">/{{ workspace.slug }}</p>
+          @if (workspace.description) {
+            <p class="ws__desc">{{ workspace.description }}</p>
+          }
+        </a>
+
+        <div class="ws__footer">
+          <span class="muted">
+            {{ workspace._count?.projects ?? 0 }} проект(ов) ·
+            {{ workspace._count?.members ?? 0 }} участник(ов)
+          </span>
+          <button
+            class="btn btn--danger"
+            type="button"
+            (click)="remove(workspace)"
+          >
+            Удалить
+          </button>
+        </div>
+      </li>
+    }
+  </ul>
+}

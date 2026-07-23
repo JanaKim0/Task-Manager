@@ -1,0 +1,116 @@
+<a class="back muted" routerLink="/workspaces">← ко всем пространствам</a>
+
+@if (loading()) {
+  <p class="muted">Загрузка...</p>
+} @else if (error() && !workspace()) {
+  <p class="error-text">{{ error() }}</p>
+} @else if (workspace(); as ws) {
+  <section class="head">
+    <div>
+      <h1>{{ ws.name }}</h1>
+      <p class="muted">/{{ ws.slug }}</p>
+      @if (ws.description) {
+        <p class="head__desc">{{ ws.description }}</p>
+      }
+    </div>
+    <button class="btn btn--primary" type="button" (click)="toggleForm()">
+      {{ formOpen() ? 'Отмена' : '+ Новый проект' }}
+    </button>
+  </section>
+
+  @if (ws.members?.length) {
+    <section class="members">
+      <h3 class="section-title">Участники</h3>
+      <ul class="members__list">
+        @for (member of ws.members; track member.id) {
+          <li class="member">
+            <span class="member__avatar">
+              {{ member.user?.name?.charAt(0) ?? '?' }}
+            </span>
+            <span>{{ member.user?.name }}</span>
+            <span class="member__role muted">{{ member.role }}</span>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (error()) {
+    <p class="error-text">{{ error() }}</p>
+  }
+
+  @if (formOpen()) {
+    <form class="card form" [formGroup]="form" (ngSubmit)="submit()">
+      <div class="field">
+        <label for="pname">Название проекта</label>
+        <input id="pname" formControlName="name" placeholder="Например, Портфолио" />
+        @if (form.controls.name.touched && form.controls.name.invalid) {
+          <span class="error-text">Минимум 2 символа</span>
+        }
+      </div>
+
+      <div class="field">
+        <label>Цвет</label>
+        <div class="palette">
+          @for (color of palette; track color) {
+            <button
+              type="button"
+              class="palette__dot"
+              [class.palette__dot--active]="form.controls.color.value === color"
+              [style.background]="color"
+              [attr.aria-label]="'Цвет ' + color"
+              (click)="pickColor(color)"
+            ></button>
+          }
+        </div>
+      </div>
+
+      <div class="field form__wide">
+        <label for="pdesc">Описание</label>
+        <textarea
+          id="pdesc"
+          formControlName="description"
+          rows="2"
+          placeholder="Необязательно"
+        ></textarea>
+      </div>
+
+      <div class="form__actions">
+        <button class="btn btn--primary" type="submit" [disabled]="saving()">
+          {{ saving() ? 'Сохраняю...' : 'Создать проект' }}
+        </button>
+      </div>
+    </form>
+  }
+
+  <h3 class="section-title">Проекты</h3>
+
+  @if (projects().length === 0) {
+    <div class="card empty">
+      <p>В этом пространстве ещё нет проектов.</p>
+      <p class="muted">Создайте первый — доски появятся на следующем этапе.</p>
+    </div>
+  } @else {
+    <ul class="grid">
+      @for (project of projects(); track project.id) {
+        <li class="card project">
+          <span class="project__bar" [style.background]="project.color"></span>
+          <div class="project__body">
+            <h2 class="project__title">{{ project.name }}</h2>
+            @if (project.description) {
+              <p class="project__desc muted">{{ project.description }}</p>
+            }
+          </div>
+          <div class="project__footer">
+            <span class="muted">
+              {{ project._count?.boards ?? project.boards?.length ?? 0 }} доск(и)
+            </span>
+            <button class="btn btn--danger" type="button" (click)="remove(project)">
+              Удалить
+            </button>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+}
