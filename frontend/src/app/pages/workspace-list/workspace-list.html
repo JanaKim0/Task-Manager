@@ -1,10 +1,10 @@
 <section class="head">
   <div>
-    <h1>Рабочие пространства</h1>
-    <p class="muted">Верхний уровень: внутри пространств живут проекты и доски.</p>
+    <h1>Workspaces</h1>
+    <p class="muted">The top level — projects and boards live inside them.</p>
   </div>
   <button class="btn btn--primary" type="button" (click)="toggleForm()">
-    {{ formOpen() ? 'Отмена' : '+ Новое пространство' }}
+    {{ formOpen() ? 'Cancel' : '+ New workspace' }}
   </button>
 </section>
 
@@ -15,50 +15,50 @@
 @if (formOpen()) {
   <form class="card form" [formGroup]="form" (ngSubmit)="submit()">
     <div class="field">
-      <label for="name">Название</label>
+      <label for="name">Name</label>
       <input
         id="name"
         formControlName="name"
-        placeholder="Например, Личное"
+        placeholder="Personal"
         (input)="onNameInput()"
       />
       @if (form.controls.name.touched && form.controls.name.invalid) {
-        <span class="error-text">Минимум 2 символа</span>
+        <span class="error-text">At least 2 characters</span>
       }
     </div>
 
     <div class="field">
-      <label for="slug">Короткий адрес (slug)</label>
+      <label for="slug">Short address (slug)</label>
       <input id="slug" formControlName="slug" placeholder="personal" />
       @if (form.controls.slug.touched && form.controls.slug.invalid) {
-        <span class="error-text">Только a-z, цифры и дефис</span>
+        <span class="error-text">Lowercase letters, digits and hyphens only</span>
       }
     </div>
 
     <div class="field form__wide">
-      <label for="description">Описание</label>
+      <label for="description">Description</label>
       <textarea
         id="description"
         formControlName="description"
         rows="2"
-        placeholder="Необязательно"
+        placeholder="Optional"
       ></textarea>
     </div>
 
     <div class="form__actions">
       <button class="btn btn--primary" type="submit" [disabled]="saving()">
-        {{ saving() ? 'Сохраняю...' : 'Создать' }}
+        {{ saving() ? 'Saving...' : 'Create' }}
       </button>
     </div>
   </form>
 }
 
 @if (loading()) {
-  <p class="muted">Загрузка...</p>
+  <p class="muted">Loading...</p>
 } @else if (workspaces().length === 0) {
   <div class="card empty">
-    <p>Пока пусто.</p>
-    <p class="muted">Создайте первое рабочее пространство.</p>
+    <p>Nothing here yet.</p>
+    <p class="muted">Create your first workspace to get started.</p>
   </div>
 } @else {
   <ul class="grid">
@@ -74,15 +74,15 @@
 
         <div class="ws__footer">
           <span class="muted">
-            {{ workspace._count?.projects ?? 0 }} проект(ов) ·
-            {{ workspace._count?.members ?? 0 }} участник(ов)
+            {{ workspace._count?.projects ?? 0 }}
+            {{ workspace._count?.projects === 1 ? 'project' : 'projects' }}
           </span>
           <button
-            class="btn btn--danger"
+            class="btn btn--danger btn--sm"
             type="button"
             (click)="remove(workspace)"
           >
-            Удалить
+            Delete
           </button>
         </div>
       </li>

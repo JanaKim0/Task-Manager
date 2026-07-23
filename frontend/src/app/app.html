@@ -4,10 +4,10 @@
     {{ appName }}
   </a>
   <nav class="topbar__nav">
-    <a routerLink="/workspaces">Рабочие пространства</a>
+    <a routerLink="/workspaces">Workspaces</a>
   </nav>
 </header>
 
-<main class="page">
+<main class="page" [class.page--wide]="wideLayout()">
   <router-outlet />
 </main>

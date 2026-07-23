@@ -1,0 +1,236 @@
+@if (loading()) {
+  <p class="muted">Loading the board...</p>
+} @else if (error() && !board()) {
+  <p class="error-text">{{ error() }}</p>
+} @else if (board(); as boardData) {
+  <section class="board-head">
+    <div>
+      @if (boardData.project; as project) {
+        <a class="back muted" [routerLink]="['/workspaces', project.workspaceId]">
+          ← {{ project.name }}
+        </a>
+      }
+      <h1>{{ boardData.name }}</h1>
+      <p class="muted">
+        {{ doneCards() }} of {{ totalCards() }} done
+      </p>
+    </div>
+    <button class="btn" type="button" (click)="openColumnForm()">
+      + Add column
+    </button>
+  </section>
+
+  @if (error()) {
+    <p class="error-text">{{ error() }}</p>
+  }
+
+  <div class="columns">
+    @for (column of columns(); track column.id) {
+      <section class="column">
+        <header class="column__head">
+          <h2 class="column__title">
+            {{ column.name }}
+            <span class="column__count">{{ column.cards.length }}</span>
+          </h2>
+          <button
+            class="btn btn--ghost btn--sm"
+            type="button"
+            title="Delete column"
+            (click)="removeColumn(column)"
+          >
+            ✕
+          </button>
+        </header>
+
+        <ul class="cards">
+          @for (card of column.cards; track card.id) {
+            <li class="task" [class.task--done]="card.done">
+              <label class="task__check">
+                <input
+                  type="checkbox"
+                  [checked]="card.done"
+                  (change)="toggleDone(card)"
+                  [attr.aria-label]="'Mark ' + card.title + ' as done'"
+                />
+              </label>
+
+              <div class="task__body" (click)="openEditor(card)">
+                <p class="task__title">{{ card.title }}</p>
+
+                <div class="task__meta">
+                  @if (card.dueDate) {
+                    <span
+                      class="due"
+                      [class.due--overdue]="dueState(card) === 'overdue'"
+                      [class.due--today]="dueState(card) === 'today'"
+                      [class.due--soon]="dueState(card) === 'soon'"
+                    >
+                      {{ dueLabel(card) }}
+                    </span>
+                  }
+                  <span class="prio" [class]="'prio--' + card.priority.toLowerCase()">
+                    {{ priorityLabels[card.priority] }}
+                  </span>
+                  @if (card._count?.comments) {
+                    <span class="muted">💬 {{ card._count?.comments }}</span>
+                  }
+                </div>
+              </div>
+
+              <div class="task__actions">
+                <button
+                  class="btn btn--ghost btn--sm"
+                  type="button"
+                  title="Edit"
+                  (click)="openEditor(card)"
+                >
+                  ✎
+                </button>
+                <button
+                  class="btn btn--ghost btn--sm"
+                  type="button"
+                  title="Delete"
+                  (click)="removeCard(card)"
+                >
+                  🗑
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+
+        @if (addingToColumn() === column.id) {
+          <div class="add-card">
+            <input
+              class="add-card__input"
+              placeholder="Card title"
+              [value]="newCardTitle()"
+              (input)="newCardTitle.set($any($event.target).value)"
+              (keydown.enter)="addCard(column.id)"
+              (keydown.escape)="cancelAddCard()"
+              autofocus
+            />
+            <div class="add-card__actions">
+              <button
+                class="btn btn--primary btn--sm"
+                type="button"
+                (click)="addCard(column.id)"
+              >
+                Add
+              </button>
+              <button
+                class="btn btn--ghost btn--sm"
+                type="button"
+                (click)="cancelAddCard()"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        } @else {
+          <button
+            class="column__add"
+            type="button"
+            (click)="startAddCard(column.id)"
+          >
+            + Add a card
+          </button>
+        }
+      </section>
+    }
+
+    @if (showColumnForm()) {
+      <section class="column column--new">
+        <input
+          class="add-card__input"
+          placeholder="Column name"
+          [value]="newColumnName()"
+          (input)="newColumnName.set($any($event.target).value)"
+          (keydown.enter)="addColumn()"
+          (keydown.escape)="showColumnForm.set(false)"
+          autofocus
+        />
+        <div class="add-card__actions">
+          <button class="btn btn--primary btn--sm" type="button" (click)="addColumn()">
+            Add column
+          </button>
+          <button
+            class="btn btn--ghost btn--sm"
+            type="button"
+            (click)="showColumnForm.set(false)"
+          >
+            Cancel
+          </button>
+        </div>
+      </section>
+    }
+  </div>
+}
+
+<!-- Card editor -->
+@if (editingCard(); as card) {
+  <div class="backdrop" (click)="closeEditor()"></div>
+
+  <div class="dialog card" role="dialog" aria-label="Edit card">
+    <header class="dialog__head">
+      <h2>Edit card</h2>
+      <button class="btn btn--ghost btn--sm" type="button" (click)="closeEditor()">
+        ✕
+      </button>
+    </header>
+
+    <form [formGroup]="cardForm" (ngSubmit)="saveCard()">
+      <div class="field">
+        <label for="title">Title</label>
+        <input id="title" formControlName="title" />
+        @if (cardForm.controls.title.touched && cardForm.controls.title.invalid) {
+          <span class="error-text">The title cannot be empty</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="desc">Description</label>
+        <textarea id="desc" formControlName="description" rows="4"></textarea>
+      </div>
+
+      <div class="dialog__row">
+        <div class="field">
+          <label for="due">Deadline (optional)</label>
+          <div class="due-input">
+            <input id="due" type="date" formControlName="dueDate" />
+            @if (cardForm.controls.dueDate.value) {
+              <button
+                class="btn btn--ghost btn--sm"
+                type="button"
+                (click)="clearDueDate()"
+              >
+                Clear
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="prio">Priority</label>
+          <select id="prio" formControlName="priority">
+            @for (priority of priorities; track priority) {
+              <option [value]="priority">{{ priorityLabels[priority] }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <footer class="dialog__foot">
+        <span class="muted">
+          {{ card.done ? 'Marked as done' : 'Not done yet' }}
+        </span>
+        <span class="dialog__buttons">
+          <button class="btn" type="button" (click)="closeEditor()">Cancel</button>
+          <button class="btn btn--primary" type="submit" [disabled]="saving()">
+            {{ saving() ? 'Saving...' : 'Save' }}
+          </button>
+        </span>
+      </footer>
+    </form>
+  </div>
+}

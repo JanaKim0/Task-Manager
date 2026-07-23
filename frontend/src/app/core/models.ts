@@ -1,25 +1,20 @@
 /**
- * Типы данных, которые приходят с backend.
- * Держим их в одном месте, чтобы не дублировать по компонентам.
+ * Shapes of the data returned by the backend.
+ * Kept in one place so components never redeclare them.
+ *
+ * This is a single-user app: there are no accounts or assignees.
  */
 
-export type Role = 'OWNER' | 'ADMIN' | 'MEMBER';
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  avatarUrl: string | null;
-}
+export const PRIORITIES: Priority[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 
-export interface Membership {
-  id: string;
-  role: Role;
-  userId: string;
-  workspaceId: string;
-  user?: User;
-}
+export const PRIORITY_LABELS: Record<Priority, string> = {
+  LOW: 'Low',
+  MEDIUM: 'Medium',
+  HIGH: 'High',
+  URGENT: 'Urgent',
+};
 
 export interface Workspace {
   id: string;
@@ -28,11 +23,10 @@ export interface Workspace {
   description: string | null;
   createdAt: string;
   updatedAt: string;
-  // приходит только из списка (GET /workspaces)
-  _count?: { projects: number; members: number };
-  // приходят только из карточки (GET /workspaces/:id)
+  // present in the list response only
+  _count?: { projects: number };
+  // present in the detail response only
   projects?: Project[];
-  members?: Membership[];
 }
 
 export interface Project {
@@ -53,9 +47,41 @@ export interface Board {
   name: string;
   order: number;
   projectId: string;
+  project?: Pick<Project, 'id' | 'name' | 'color' | 'workspaceId'>;
+  columns?: BoardColumn[];
 }
 
-// Тела запросов на создание/изменение
+export interface BoardColumn {
+  id: string;
+  name: string;
+  order: number;
+  boardId: string;
+  cards: Card[];
+}
+
+export interface Card {
+  id: string;
+  title: string;
+  description: string | null;
+  order: number;
+  dueDate: string | null;
+  priority: Priority;
+  done: boolean;
+  completedAt: string | null;
+  columnId: string;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { comments: number };
+}
+
+export interface Comment {
+  id: string;
+  body: string;
+  createdAt: string;
+  cardId: string;
+}
+
+// ---------- request bodies ----------
 
 export interface CreateWorkspaceDto {
   name: string;
@@ -73,3 +99,31 @@ export interface CreateProjectDto {
 }
 
 export type UpdateProjectDto = Partial<Omit<CreateProjectDto, 'workspaceId'>>;
+
+export interface CreateColumnDto {
+  name: string;
+  boardId: string;
+}
+
+export interface UpdateColumnDto {
+  name?: string;
+  order?: number;
+}
+
+export interface CreateCardDto {
+  title: string;
+  description?: string;
+  dueDate?: string | null;
+  priority?: Priority;
+  columnId: string;
+}
+
+export interface UpdateCardDto {
+  title?: string;
+  description?: string | null;
+  dueDate?: string | null;
+  priority?: Priority;
+  done?: boolean;
+  order?: number;
+  columnId?: string;
+}
