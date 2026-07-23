@@ -1,0 +1,81 @@
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateWorkspaceDto } from './dto/create-workspace.dto';
+import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
+
+@Injectable()
+export class WorkspacesService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  findAll() {
+    return this.prisma.workspace.findMany({
+      orderBy: { createdAt: 'asc' },
+      // _count даёт количество связанных записей без их загрузки
+      include: { _count: { select: { projects: true, members: true } } },
+    });
+  }
+
+  async findOne(id: string) {
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id },
+      include: {
+        projects: {
+          orderBy: { createdAt: 'asc' },
+          include: { _count: { select: { boards: true } } },
+        },
+        members: { include: { user: true } },
+      },
+    });
+
+    if (!workspace) {
+      throw new NotFoundException(`Рабочее пространство ${id} не найдено`);
+    }
+    return workspace;
+  }
+
+  async create(dto: CreateWorkspaceDto) {
+    try {
+      return await this.prisma.workspace.create({ data: dto });
+    } catch (error) {
+      throw this.toHttpError(error, dto.slug);
+    }
+  }
+
+  async update(id: string, dto: UpdateWorkspaceDto) {
+    await this.ensureExists(id);
+    try {
+      return await this.prisma.workspace.update({ where: { id }, data: dto });
+    } catch (error) {
+      throw this.toHttpError(error, dto.slug);
+    }
+  }
+
+  async remove(id: string) {
+    await this.ensureExists(id);
+    // Каскад из схемы удалит проекты, доски, колонки и карточки.
+    return this.prisma.workspace.delete({ where: { id } });
+  }
+
+  private async ensureExists(id: string) {
+    const count = await this.prisma.workspace.count({ where: { id } });
+    if (count === 0) {
+      throw new NotFoundException(`Рабочее пространство ${id} не найдено`);
+    }
+  }
+
+  /** Превращает ошибку уникальности Prisma в понятный HTTP-ответ 409. */
+  private toHttpError(error: unknown, slug?: string) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      return new ConflictException(`Пространство со slug "${slug}" уже есть`);
+    }
+    return error;
+  }
+}
