@@ -93,13 +93,27 @@ model Card {
   columnId String
   column   BoardColumn @relation(fields: [columnId], references: [id], onDelete: Cascade)
 
-  comments Comment[]
+  notes     Note[]
+  checklist ChecklistItem[]
 }
 
-// Notes attached to a card. No author: there is only one user.
-model Comment {
+// Free-form notes attached to a card. Called notes rather than comments
+// because there is only one user — nobody to have a conversation with.
+model Note {
   id        String   @id @default(uuid())
   body      String
+  createdAt DateTime @default(now())
+
+  cardId String
+  card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+}
+
+// A single sub-task inside a card, ticked off independently of the card.
+model ChecklistItem {
+  id        String   @id @default(uuid())
+  text      String
+  done      Boolean  @default(false)
+  order     Int      @default(0)
   createdAt DateTime @default(now())
 
   cardId String

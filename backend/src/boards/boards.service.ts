@@ -26,7 +26,12 @@ export class BoardsService {
           include: {
             cards: {
               orderBy: [{ done: 'asc' }, { order: 'asc' }],
-              include: { _count: { select: { comments: true } } },
+              include: {
+                // Checklist items are tiny, so they come with the board and
+                // the card can show "2/5" without another request.
+                checklist: { orderBy: { order: 'asc' } },
+                _count: { select: { notes: true } },
+              },
             },
           },
         },

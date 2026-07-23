@@ -15,7 +15,10 @@ export class CardsService {
   async findOne(id: string) {
     const card = await this.prisma.card.findUnique({
       where: { id },
-      include: { comments: { orderBy: { createdAt: 'asc' } } },
+      include: {
+        notes: { orderBy: { createdAt: 'desc' } },
+        checklist: { orderBy: { order: 'asc' } },
+      },
     });
 
     if (!card) {
@@ -47,7 +50,10 @@ export class CardsService {
         columnId: dto.columnId,
         order: last ? last.order + 1 : 0,
       },
-      include: { _count: { select: { comments: true } } },
+      include: {
+        checklist: { orderBy: { order: 'asc' } },
+        _count: { select: { notes: true } },
+      },
     });
   }
 
@@ -92,7 +98,10 @@ export class CardsService {
     return this.prisma.card.update({
       where: { id },
       data,
-      include: { _count: { select: { comments: true } } },
+      include: {
+        checklist: { orderBy: { order: 'asc' } },
+        _count: { select: { notes: true } },
+      },
     });
   }
 
@@ -112,7 +121,10 @@ export class CardsService {
         done: !card.done,
         completedAt: card.done ? null : new Date(),
       },
-      include: { _count: { select: { comments: true } } },
+      include: {
+        checklist: { orderBy: { order: 'asc' } },
+        _count: { select: { notes: true } },
+      },
     });
   }
 
