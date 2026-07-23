@@ -1,0 +1,34 @@
+# зависимости
+node_modules/
+
+# сборка
+dist/
+build/
+/frontend/.angular/
+/frontend/.vite/
+
+# база данных SQLite (локальная, у каждого своя)
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# переменные окружения (секреты!)
+.env
+.env.local
+.env.*.local
+
+# логи
+*.log
+npm-debug.log*
+
+# редакторы / ОС
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# тесты
+coverage/
