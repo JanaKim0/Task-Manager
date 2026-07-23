@@ -13,8 +13,9 @@ function inDays(days: number): Date {
 }
 
 /**
- * Gives a project its default board with three columns — the same thing
- * ProjectsService does when a project is created through the API.
+ * Gives a project its default board — the same thing ProjectsService does
+ * when a project is created through the API. No "Done" column: finished
+ * cards are the ones with a ticked checkbox.
  */
 function defaultBoard(projectId: string) {
   return prisma.board.create({
@@ -26,7 +27,6 @@ function defaultBoard(projectId: string) {
         create: [
           { name: 'To do', order: 0 },
           { name: 'In progress', order: 1 },
-          { name: 'Done', order: 2 },
         ],
       },
     },
@@ -37,7 +37,8 @@ function defaultBoard(projectId: string) {
 async function main() {
   console.log('Clearing the database...');
   // Order matters: children first, then parents.
-  await prisma.comment.deleteMany();
+  await prisma.note.deleteMany();
+  await prisma.checklistItem.deleteMany();
   await prisma.card.deleteMany();
   await prisma.boardColumn.deleteMany();
   await prisma.board.deleteMany();
@@ -95,9 +96,9 @@ async function main() {
   await defaultBoard(landing.id);
 
   const board = await defaultBoard(portfolio.id);
-  const [todo, doing, done] = board.columns;
+  const [todo, doing] = board.columns;
 
-  const designCard = await prisma.card.create({
+  await prisma.card.create({
     data: {
       title: 'Design the landing page',
       description: 'Header, workspace list, footer',
@@ -105,11 +106,21 @@ async function main() {
       priority: Priority.HIGH,
       dueDate: inDays(3),
       columnId: todo.id,
+      notes: {
+        create: [
+          { body: 'Start with a Figma mockup' },
+          { body: 'Client prefers a serif font for headings' },
+        ],
+      },
+      checklist: {
+        create: [
+          { text: 'Sketch the header', done: true, order: 0 },
+          { text: 'Pick the colour palette', done: true, order: 1 },
+          { text: 'Lay out the card grid', order: 2 },
+          { text: 'Design the footer', order: 3 },
+        ],
+      },
     },
-  });
-
-  await prisma.comment.create({
-    data: { body: 'Start with a Figma mockup', cardId: designCard.id },
   });
 
   await prisma.card.create({
@@ -125,22 +136,39 @@ async function main() {
 
   await prisma.card.create({
     data: {
-      title: 'Build the cards API',
-      order: 0,
-      priority: Priority.URGENT,
-      dueDate: inDays(1),
-      columnId: doing.id,
+      title: 'Fix the overdue badge colour',
+      order: 2,
+      priority: Priority.MEDIUM,
+      dueDate: inDays(-2),
+      columnId: todo.id,
     },
   });
 
   await prisma.card.create({
     data: {
-      title: 'Set up the database schema',
+      title: 'Build the cards API',
       order: 0,
+      priority: Priority.URGENT,
+      dueDate: inDays(1),
+      columnId: doing.id,
+      checklist: {
+        create: [
+          { text: 'Create endpoint', done: true, order: 0 },
+          { text: 'Add validation', order: 1 },
+        ],
+      },
+    },
+  });
+
+  // A finished card stays in its column and is simply ticked off.
+  await prisma.card.create({
+    data: {
+      title: 'Set up the database schema',
+      order: 1,
       priority: Priority.MEDIUM,
       done: true,
       completedAt: new Date(),
-      columnId: done.id,
+      columnId: doing.id,
     },
   });
 

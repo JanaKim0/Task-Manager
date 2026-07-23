@@ -52,8 +52,9 @@ export class ProjectsService {
 
     const project = await this.prisma.project.create({ data: dto });
 
-    // Every project gets a default board with three columns, so the user
-    // never lands on an empty screen.
+    // Every project gets a default board, so the user never lands on an
+    // empty screen. There is no "Done" column on purpose: a card is finished
+    // when its checkbox is ticked, and the board filter hides it from view.
     await this.prisma.board.create({
       data: {
         name: 'Main board',
@@ -63,7 +64,6 @@ export class ProjectsService {
           create: [
             { name: 'To do', order: 0 },
             { name: 'In progress', order: 1 },
-            { name: 'Done', order: 2 },
           ],
         },
       },
