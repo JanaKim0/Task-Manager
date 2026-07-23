@@ -7,9 +7,31 @@ import { PrismaClient, Priority } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-/** Returns a date N days from now, or null for "no deadline". */
+/** Returns a date N days from now. */
 function inDays(days: number): Date {
   return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+}
+
+/**
+ * Gives a project its default board with three columns — the same thing
+ * ProjectsService does when a project is created through the API.
+ */
+function defaultBoard(projectId: string) {
+  return prisma.board.create({
+    data: {
+      name: 'Main board',
+      order: 0,
+      projectId,
+      columns: {
+        create: [
+          { name: 'To do', order: 0 },
+          { name: 'In progress', order: 1 },
+          { name: 'Done', order: 2 },
+        ],
+      },
+    },
+    include: { columns: { orderBy: { order: 'asc' } } },
+  });
 }
 
 async function main() {
@@ -49,7 +71,7 @@ async function main() {
     },
   });
 
-  await prisma.project.create({
+  const serbian = await prisma.project.create({
     data: {
       name: 'Serbian language',
       description: 'Lesson plan for the quarter',
@@ -58,7 +80,7 @@ async function main() {
     },
   });
 
-  await prisma.project.create({
+  const landing = await prisma.project.create({
     data: {
       name: 'Landing page',
       description: 'One-pager with a contact form',
@@ -67,20 +89,13 @@ async function main() {
     },
   });
 
-  console.log('Creating a board with columns and cards...');
-  const board = await prisma.board.create({
-    data: { name: 'Main board', order: 0, projectId: portfolio.id },
-  });
+  console.log('Creating boards with columns and cards...');
+  // Every project gets a board, so no project shows up empty.
+  await defaultBoard(serbian.id);
+  await defaultBoard(landing.id);
 
-  const todo = await prisma.boardColumn.create({
-    data: { name: 'To do', order: 0, boardId: board.id },
-  });
-  const doing = await prisma.boardColumn.create({
-    data: { name: 'In progress', order: 1, boardId: board.id },
-  });
-  const done = await prisma.boardColumn.create({
-    data: { name: 'Done', order: 2, boardId: board.id },
-  });
+  const board = await defaultBoard(portfolio.id);
+  const [todo, doing, done] = board.columns;
 
   const designCard = await prisma.card.create({
     data: {
