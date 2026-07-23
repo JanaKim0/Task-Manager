@@ -1,8 +1,14 @@
-import { IsHexColor, IsOptional, IsString, IsUUID, Length } from 'class-validator';
+import {
+  IsHexColor,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Length,
+} from 'class-validator';
 
 export class CreateProjectDto {
   @IsString()
-  @Length(2, 80, { message: 'Название: от 2 до 80 символов' })
+  @Length(2, 80, { message: 'Name must be between 2 and 80 characters' })
   name!: string;
 
   @IsOptional()
@@ -11,9 +17,9 @@ export class CreateProjectDto {
   description?: string;
 
   @IsOptional()
-  @IsHexColor({ message: 'Цвет должен быть в формате #rrggbb' })
+  @IsHexColor({ message: 'Color must be a hex value like #rrggbb' })
   color?: string;
 
-  @IsUUID('4', { message: 'workspaceId должен быть UUID' })
+  @IsUUID('4', { message: 'workspaceId must be a UUID' })
   workspaceId!: string;
 }

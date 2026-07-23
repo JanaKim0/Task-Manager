@@ -1,133 +1,135 @@
 /**
- * Наполняет базу демо-данными, чтобы приложение не открывалось пустым.
- * Запуск: npm run seed
+ * Fills the database with demo data so the app never opens empty.
+ * Run: npm run seed
  */
 import 'dotenv/config';
-import { PrismaClient, Role, Priority } from '@prisma/client';
+import { PrismaClient, Priority } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+/** Returns a date N days from now, or null for "no deadline". */
+function inDays(days: number): Date {
+  return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+}
+
 async function main() {
-  console.log('Очищаю базу...');
-  // Порядок важен: сначала дети, потом родители.
-  await prisma.cardAssignee.deleteMany();
+  console.log('Clearing the database...');
+  // Order matters: children first, then parents.
   await prisma.comment.deleteMany();
   await prisma.card.deleteMany();
   await prisma.boardColumn.deleteMany();
   await prisma.board.deleteMany();
   await prisma.project.deleteMany();
-  await prisma.membership.deleteMany();
   await prisma.workspace.deleteMany();
-  await prisma.user.deleteMany();
 
-  console.log('Создаю пользователей...');
-  const yana = await prisma.user.create({
-    data: { email: 'yana@example.com', name: 'Яна' },
-  });
-  const alex = await prisma.user.create({
-    data: { email: 'alex@example.com', name: 'Алекс' },
-  });
-
-  console.log('Создаю рабочие пространства...');
+  console.log('Creating workspaces...');
   const personal = await prisma.workspace.create({
     data: {
-      name: 'Личное',
+      name: 'Personal',
       slug: 'personal',
-      description: 'Учебные и домашние задачи',
-      members: {
-        create: [{ userId: yana.id, role: Role.OWNER }],
-      },
+      description: 'Study plans and everyday tasks',
     },
   });
 
-  const studio = await prisma.workspace.create({
+  const freelance = await prisma.workspace.create({
     data: {
-      name: 'Веб-студия',
-      slug: 'web-studio',
-      description: 'Клиентские проекты',
-      members: {
-        create: [
-          { userId: yana.id, role: Role.OWNER },
-          { userId: alex.id, role: Role.MEMBER },
-        ],
-      },
+      name: 'Freelance',
+      slug: 'freelance',
+      description: 'Client work',
     },
   });
 
-  console.log('Создаю проекты и доски...');
+  console.log('Creating projects...');
   const portfolio = await prisma.project.create({
     data: {
-      name: 'Портфолио',
-      description: 'Шесть пет-проектов за месяц',
-      color: '#4f46e5',
+      name: 'Portfolio',
+      description: 'Six pet projects in one month',
+      color: '#e8749c',
       workspaceId: personal.id,
     },
   });
 
   await prisma.project.create({
     data: {
-      name: 'Английский',
-      description: 'План занятий на квартал',
-      color: '#059669',
+      name: 'Serbian language',
+      description: 'Lesson plan for the quarter',
+      color: '#7cc4a4',
       workspaceId: personal.id,
     },
   });
 
   await prisma.project.create({
     data: {
-      name: 'Лендинг для клиента',
-      description: 'Одностраничник с формой заявки',
-      color: '#dc2626',
-      workspaceId: studio.id,
+      name: 'Landing page',
+      description: 'One-pager with a contact form',
+      color: '#f0a868',
+      workspaceId: freelance.id,
     },
   });
 
-  // Одна доска с колонками и карточками — понадобится на 2-м этапе.
+  console.log('Creating a board with columns and cards...');
   const board = await prisma.board.create({
-    data: { name: 'Основная доска', order: 0, projectId: portfolio.id },
+    data: { name: 'Main board', order: 0, projectId: portfolio.id },
   });
 
   const todo = await prisma.boardColumn.create({
-    data: { name: 'To Do', order: 0, boardId: board.id },
+    data: { name: 'To do', order: 0, boardId: board.id },
   });
-  const inProgress = await prisma.boardColumn.create({
-    data: { name: 'В работе', order: 1, boardId: board.id },
+  const doing = await prisma.boardColumn.create({
+    data: { name: 'In progress', order: 1, boardId: board.id },
   });
-  await prisma.boardColumn.create({
-    data: { name: 'Готово', order: 2, boardId: board.id },
+  const done = await prisma.boardColumn.create({
+    data: { name: 'Done', order: 2, boardId: board.id },
   });
 
-  const card = await prisma.card.create({
+  const designCard = await prisma.card.create({
     data: {
-      title: 'Сверстать главную страницу',
-      description: 'Шапка, список пространств, подвал',
+      title: 'Design the landing page',
+      description: 'Header, workspace list, footer',
       order: 0,
       priority: Priority.HIGH,
-      dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+      dueDate: inDays(3),
       columnId: todo.id,
-      assignees: { create: [{ userId: yana.id }] },
     },
   });
 
   await prisma.comment.create({
+    data: { body: 'Start with a Figma mockup', cardId: designCard.id },
+  });
+
+  await prisma.card.create({
     data: {
-      body: 'Начну с макета в Figma',
-      cardId: card.id,
-      authorId: yana.id,
+      title: 'Write the README',
+      description: null,
+      order: 1,
+      priority: Priority.LOW,
+      // No dueDate: a card without a deadline is perfectly fine.
+      columnId: todo.id,
     },
   });
 
   await prisma.card.create({
     data: {
-      title: 'Настроить API рабочих пространств',
+      title: 'Build the cards API',
       order: 0,
       priority: Priority.URGENT,
-      columnId: inProgress.id,
-      assignees: { create: [{ userId: alex.id }] },
+      dueDate: inDays(1),
+      columnId: doing.id,
     },
   });
 
-  console.log('Готово. Демо-данные добавлены.');
+  await prisma.card.create({
+    data: {
+      title: 'Set up the database schema',
+      order: 0,
+      priority: Priority.MEDIUM,
+      done: true,
+      completedAt: new Date(),
+      columnId: done.id,
+    },
+  });
+
+  console.log('Done. Demo data created.');
 }
 
 main()
