@@ -6,8 +6,12 @@ import {
   Board,
   BoardColumn,
   Card,
+  ChecklistItem,
   CreateCardDto,
+  CreateChecklistItemDto,
   CreateColumnDto,
+  CreateNoteDto,
+  Note,
   UpdateCardDto,
   UpdateColumnDto,
 } from './models';
@@ -50,5 +54,37 @@ export class BoardService {
 
   removeCard(id: string): Observable<Card> {
     return this.http.delete<Card>(`${this.api}/cards/${id}`);
+  }
+
+  /** One card with its notes and checklist — used by the editor dialog. */
+  getCard(id: string): Observable<Card> {
+    return this.http.get<Card>(`${this.api}/cards/${id}`);
+  }
+
+  // ---------- notes ----------
+
+  createNote(dto: CreateNoteDto): Observable<Note> {
+    return this.http.post<Note>(`${this.api}/notes`, dto);
+  }
+
+  removeNote(id: string): Observable<Note> {
+    return this.http.delete<Note>(`${this.api}/notes/${id}`);
+  }
+
+  // ---------- checklist ----------
+
+  createChecklistItem(dto: CreateChecklistItemDto): Observable<ChecklistItem> {
+    return this.http.post<ChecklistItem>(`${this.api}/checklist`, dto);
+  }
+
+  toggleChecklistItem(id: string): Observable<ChecklistItem> {
+    return this.http.patch<ChecklistItem>(
+      `${this.api}/checklist/${id}/toggle`,
+      {},
+    );
+  }
+
+  removeChecklistItem(id: string): Observable<ChecklistItem> {
+    return this.http.delete<ChecklistItem>(`${this.api}/checklist/${id}`);
   }
 }
