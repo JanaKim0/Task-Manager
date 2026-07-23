@@ -26,7 +26,14 @@ export class WorkspacesService {
       include: {
         projects: {
           orderBy: { createdAt: 'asc' },
-          include: { _count: { select: { boards: true } } },
+          include: {
+            // The first board is what the "Open board" link points at.
+            boards: {
+              orderBy: { order: 'asc' },
+              select: { id: true, name: true, order: true, projectId: true },
+            },
+            _count: { select: { boards: true } },
+          },
         },
       },
     });
