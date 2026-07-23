@@ -1,56 +1,84 @@
-# Task Manager — аналог Trello
+# Task Manager
 
-Учебный pet-проект: доски задач с рабочими пространствами, проектами, колонками и карточками.
+A Trello-style task board built as a portfolio project: workspaces hold
+projects, projects hold boards, boards hold columns, and columns hold cards.
 
-## Стек
+Single user by design — no accounts, no logins, no assignees. It is a personal
+planner, so everything on screen belongs to whoever runs the app.
 
-| Слой | Технология | Зачем |
+## Stack
+
+| Layer | Technology | Why |
 |---|---|---|
-| Frontend | Angular 20 + TypeScript + SCSS | большие компоненты, роутинг, формы |
-| Backend | NestJS 11 + TypeScript | REST API, архитектура «как в Angular» |
-| ORM | Prisma | схема БД в одном файле, миграции, типобезопасность |
-| БД | SQLite (позже — PostgreSQL) | связанные сущности, внешние ключи |
+| Frontend | Angular 20 + TypeScript + SCSS | components, routing, reactive forms, signals |
+| Backend | NestJS 11 + TypeScript | REST API with the same module/service structure as Angular |
+| ORM | Prisma 6 | schema in one file, versioned migrations, typed queries |
+| Database | SQLite (PostgreSQL later) | related entities with real foreign keys |
 
-Один язык на весь проект — **TypeScript**.
+One language across the whole project: **TypeScript**.
 
-## Структура
+## Features
+
+- Workspaces, projects, boards, columns and cards
+- Create, edit and delete at every level
+- Tick a card off as done, with a live "x of y done" counter
+- Optional deadline per card, colour-coded as overdue / today / soon
+- Four priority levels
+- Cascading deletes: removing a workspace removes everything inside it
+
+## Project layout
 
 ```
 Task Manager/
-├── backend/    — NestJS API (порт 3000)
-├── frontend/   — Angular SPA (порт 4200)
-└── docs/       — план разработки и схема БД
+├── backend/    NestJS API (port 3000)
+├── frontend/   Angular SPA (port 4200)
+└── docs/       roadmap and database notes
 ```
 
-## Запуск
+## Running it
 
-Backend:
+Backend, in the first terminal:
 
 ```bash
 cd backend && npm install && npx prisma migrate dev && npm run seed && npm run start:dev
 ```
 
-Frontend (в отдельном терминале):
+Frontend, in a second terminal:
 
 ```bash
 cd frontend && npm install && npm start
 ```
 
-Открыть http://localhost:4200
+Then open http://localhost:4200
 
-## Модель данных
+Useful extras:
 
-```
-User ──< Membership >── Workspace ──< Project ──< Board ──< Column ──< Card
-                                                                       ├──< Assignee >── User
-                                                                       └──< Comment ──> User
+```bash
+cd backend && npm run db:studio
 ```
 
-Подробнее — [docs/ROADMAP.md](docs/ROADMAP.md).
+opens a browser view of the database, and
 
-## Этапы
+```bash
+cd backend && npm run db:reset
+```
 
-- [x] **Этап 1** — фундамент: репозиторий, схема БД, API рабочих пространств и проектов, каркас Angular
-- [ ] **Этап 2** — доски, колонки, карточки: полный CRUD и экран доски
-- [ ] **Этап 3** — исполнители, комментарии, дедлайны, приоритет, фильтр
-- [ ] **Этап 4** — Drag & Drop, полировка UI, деплой
+wipes it and reloads the demo data.
+
+## Data model
+
+```
+Workspace ──< Project ──< Board ──< BoardColumn ──< Card ──< Comment
+```
+
+Every arrow is a one-to-many relation with `onDelete: Cascade`, so deleting a
+parent cleans up its children instead of leaving orphaned rows.
+
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the full schema and the build plan.
+
+## Progress
+
+- [x] **Stage 1** — foundation: database schema, workspace and project API, Angular shell
+- [x] **Stage 2** — boards, columns and cards: full CRUD, done checkbox, deadlines
+- [ ] **Stage 3** — comments and filtering
+- [ ] **Stage 4** — drag & drop, polish, deployment
