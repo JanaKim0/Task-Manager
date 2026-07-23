@@ -71,14 +71,29 @@ export interface Card {
   columnId: string;
   createdAt: string;
   updatedAt: string;
-  _count?: { comments: number };
+  // Checklist items travel with the board so cards can show "2/5".
+  checklist: ChecklistItem[];
+  // Notes are only loaded when a card is opened.
+  notes?: Note[];
+  _count?: { notes: number };
 }
 
-export interface Comment {
+/** A personal note on a card. Not a comment — there is only one user. */
+export interface Note {
   id: string;
   body: string;
   createdAt: string;
   cardId: string;
+}
+
+/** A sub-task inside a card, ticked independently of the card itself. */
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  done: boolean;
+  order: number;
+  cardId: string;
+  createdAt: string;
 }
 
 // ---------- request bodies ----------
@@ -127,3 +142,31 @@ export interface UpdateCardDto {
   order?: number;
   columnId?: string;
 }
+
+export interface CreateNoteDto {
+  body: string;
+  cardId: string;
+}
+
+export interface CreateChecklistItemDto {
+  text: string;
+  cardId: string;
+}
+
+// ---------- board filters (client side only) ----------
+
+export type DueFilter = 'any' | 'overdue' | 'week' | 'none';
+
+export interface BoardFilters {
+  search: string;
+  priority: Priority | 'any';
+  due: DueFilter;
+  hideDone: boolean;
+}
+
+export const EMPTY_FILTERS: BoardFilters = {
+  search: '',
+  priority: 'any',
+  due: 'any',
+  hideDone: false,
+};

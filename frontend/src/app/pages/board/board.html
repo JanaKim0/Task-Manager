@@ -13,6 +13,9 @@
       <h1>{{ boardData.name }}</h1>
       <p class="muted">
         {{ doneCards() }} of {{ totalCards() }} done
+        @if (filtersActive()) {
+          · {{ visibleCards() }} shown
+        }
       </p>
     </div>
     <button class="btn" type="button" (click)="openColumnForm()">
@@ -20,12 +23,69 @@
     </button>
   </section>
 
+  <!-- Filter bar -->
+  <section class="filters">
+    <input
+      class="filters__search"
+      type="search"
+      placeholder="Search cards..."
+      [value]="filters().search"
+      (input)="setSearch($any($event.target).value)"
+      aria-label="Search cards"
+    />
+
+    <select
+      [value]="filters().priority"
+      (change)="setPriority($any($event.target).value)"
+      aria-label="Filter by priority"
+    >
+      <option value="any">Any priority</option>
+      @for (priority of priorities; track priority) {
+        <option [value]="priority">{{ priorityLabels[priority] }}</option>
+      }
+    </select>
+
+    <select
+      [value]="filters().due"
+      (change)="setDue($any($event.target).value)"
+      aria-label="Filter by deadline"
+    >
+      @for (option of dueFilters; track option.value) {
+        <option [value]="option.value">{{ option.label }}</option>
+      }
+    </select>
+
+    <label class="filters__toggle">
+      <input
+        type="checkbox"
+        [checked]="filters().hideDone"
+        (change)="toggleHideDone()"
+      />
+      Hide done
+    </label>
+
+    @if (filtersActive()) {
+      <button class="btn btn--ghost btn--sm" type="button" (click)="resetFilters()">
+        Reset
+      </button>
+    }
+  </section>
+
   @if (error()) {
     <p class="error-text">{{ error() }}</p>
   }
 
+  @if (filtersActive() && visibleCards() === 0) {
+    <div class="card empty">
+      <p>No cards match these filters.</p>
+      <button class="btn btn--sm" type="button" (click)="resetFilters()">
+        Reset filters
+      </button>
+    </div>
+  }
+
   <div class="columns">
-    @for (column of columns(); track column.id) {
+    @for (column of visibleColumns(); track column.id) {
       <section class="column">
         <header class="column__head">
           <h2 class="column__title">
@@ -71,8 +131,17 @@
                   <span class="prio" [class]="'prio--' + card.priority.toLowerCase()">
                     {{ priorityLabels[card.priority] }}
                   </span>
-                  @if (card._count?.comments) {
-                    <span class="muted">💬 {{ card._count?.comments }}</span>
+                  @if (checklistProgress(card); as progress) {
+                    <span
+                      class="chip"
+                      [class.chip--complete]="checklistComplete(card)"
+                      title="Checklist"
+                    >
+                      ☑ {{ progress }}
+                    </span>
+                  }
+                  @if (card._count?.notes) {
+                    <span class="chip" title="Notes">✎ {{ card._count?.notes }}</span>
                   }
                 </div>
               </div>
@@ -190,7 +259,7 @@
 
       <div class="field">
         <label for="desc">Description</label>
-        <textarea id="desc" formControlName="description" rows="4"></textarea>
+        <textarea id="desc" formControlName="description" rows="3"></textarea>
       </div>
 
       <div class="dialog__row">
@@ -232,5 +301,105 @@
         </span>
       </footer>
     </form>
+
+    <!-- Checklist -->
+    <section class="sub">
+      <h3 class="sub__title">
+        Checklist
+        @if (editorProgress(); as progress) {
+          <span class="muted">{{ progress }}</span>
+        }
+      </h3>
+
+      @if (checklist().length === 0 && !editorLoading()) {
+        <p class="muted sub__empty">Break the task into steps.</p>
+      }
+
+      <ul class="checklist">
+        @for (item of checklist(); track item.id) {
+          <li class="checklist__item" [class.checklist__item--done]="item.done">
+            <input
+              type="checkbox"
+              [checked]="item.done"
+              (change)="toggleChecklistItem(item)"
+              [attr.aria-label]="item.text"
+            />
+            <span class="checklist__text">{{ item.text }}</span>
+            <button
+              class="btn btn--ghost btn--sm"
+              type="button"
+              title="Delete"
+              (click)="removeChecklistItem(item)"
+            >
+              ✕
+            </button>
+          </li>
+        }
+      </ul>
+
+      <div class="sub__add">
+        <input
+          placeholder="Add a step..."
+          [value]="newChecklistItem()"
+          (input)="newChecklistItem.set($any($event.target).value)"
+          (keydown.enter)="addChecklistItem()"
+        />
+        <button
+          class="btn btn--sm"
+          type="button"
+          [disabled]="!newChecklistItem().trim()"
+          (click)="addChecklistItem()"
+        >
+          Add
+        </button>
+      </div>
+    </section>
+
+    <!-- Notes -->
+    <section class="sub">
+      <h3 class="sub__title">Notes</h3>
+
+      <div class="sub__add">
+        <textarea
+          rows="2"
+          placeholder="What happened, what to remember..."
+          [value]="newNote()"
+          (input)="newNote.set($any($event.target).value)"
+        ></textarea>
+        <button
+          class="btn btn--sm"
+          type="button"
+          [disabled]="!newNote().trim()"
+          (click)="addNote()"
+        >
+          Add
+        </button>
+      </div>
+
+      @if (editorLoading()) {
+        <p class="muted sub__empty">Loading notes...</p>
+      } @else if (notes().length === 0) {
+        <p class="muted sub__empty">No notes yet.</p>
+      } @else {
+        <ul class="notes">
+          @for (note of notes(); track note.id) {
+            <li class="note">
+              <div>
+                <p class="note__body">{{ note.body }}</p>
+                <span class="note__date muted">{{ noteDate(note) }}</span>
+              </div>
+              <button
+                class="btn btn--ghost btn--sm"
+                type="button"
+                title="Delete"
+                (click)="removeNote(note)"
+              >
+                ✕
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </section>
   </div>
 }

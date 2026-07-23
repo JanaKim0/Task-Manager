@@ -22,6 +22,69 @@
   font-size: 0.85rem;
 }
 
+/* ---------- filter bar ---------- */
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 0.85rem;
+  margin-bottom: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.filters input[type='search'],
+.filters select {
+  padding: 0.42rem 0.6rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  font: inherit;
+  font-size: 0.85rem;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.filters input[type='search']:focus,
+.filters select:focus {
+  outline: 3px solid var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.filters__search {
+  flex: 1 1 200px;
+  min-width: 160px;
+}
+
+.filters__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.filters__toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.empty {
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.empty p {
+  margin: 0 0 0.7rem;
+}
+
 /* ---------- columns ---------- */
 
 .columns {
@@ -203,6 +266,22 @@
   color: #fff;
 }
 
+/* ---------- checklist / notes chips ---------- */
+
+.chip {
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.chip--complete {
+  background: #f1f6f3;
+  border-color: #cfe3d8;
+  color: #4f8a6c;
+}
+
 /* ---------- priority badge ---------- */
 
 .prio {
@@ -325,6 +404,132 @@
   gap: 0.5rem;
 }
 
+/* ---------- checklist and notes inside the dialog ---------- */
+
+.sub {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.sub__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 0.6rem;
+}
+
+.sub__title span {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.8rem;
+}
+
+.sub__empty {
+  font-size: 0.85rem;
+  margin: 0.4rem 0;
+}
+
+.sub__add {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.sub__add input,
+.sub__add textarea {
+  flex: 1;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  font: inherit;
+  font-size: 0.87rem;
+  background: var(--surface);
+  color: var(--text);
+  resize: vertical;
+}
+
+.sub__add input:focus,
+.sub__add textarea:focus {
+  outline: 3px solid var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.checklist__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.3rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+}
+
+.checklist__item:hover {
+  background: var(--surface-soft);
+}
+
+.checklist__item input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.checklist__text {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.checklist__item--done .checklist__text {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.notes {
+  list-style: none;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.note {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.note__body {
+  margin: 0;
+  font-size: 0.88rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.note__date {
+  font-size: 0.73rem;
+}
+
 @media (max-width: 640px) {
   .board-head {
     flex-direction: column;
@@ -336,5 +541,9 @@
 
   .column {
     flex-basis: 85vw;
+  }
+
+  .filters__search {
+    flex-basis: 100%;
   }
 }
