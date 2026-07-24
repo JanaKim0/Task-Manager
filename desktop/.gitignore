@@ -1,0 +1,8 @@
+# Files gathered by scripts/stage.js — rebuilt on every packaging run
+app-content/
+
+# Installers produced by electron-builder
+release/
+
+# Drawn by scripts/make-icon.js as part of the build
+build/
