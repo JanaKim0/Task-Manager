@@ -12,7 +12,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { execFileSync } = require('node:child_process');
+const { execSync } = require('node:child_process');
 
 const DESKTOP = path.join(__dirname, '..');
 const ROOT = path.join(DESKTOP, '..');
@@ -83,10 +83,11 @@ function main() {
   }
 
   log('installing production dependencies (this takes a minute)');
-  // npm.cmd on Windows, npm elsewhere — calling the executable directly
-  // avoids running the command through a shell.
-  const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-  execFileSync(npm, ['ci', '--omit=dev', '--ignore-scripts'], {
+  // A fixed command string through execSync. Node 24 refuses to spawn
+  // npm.cmd directly on Windows, and passing an argument array with
+  // shell: true is deprecated — a literal command avoids both. Nothing
+  // here comes from user input, so there is nothing to escape.
+  execSync('npm ci --omit=dev --ignore-scripts', {
     cwd: OUT_BACKEND,
     stdio: 'inherit',
   });

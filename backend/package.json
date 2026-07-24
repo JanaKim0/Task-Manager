@@ -1,6 +1,6 @@
 {
   "name": "task-manager-backend",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Task Manager — REST API for a Trello-style personal task board",
   "author": "Jana Kim",
   "private": true,

@@ -8,11 +8,9 @@ planner, so everything on screen belongs to whoever runs the app.
 
 ### [⬇ Download for Windows](https://github.com/JanaKim0/Task-Manager/releases/latest)
 
-Just instal .exe
-
-An installer, no terminal needed. Windows will warn that the app is not
-digitally signed — click **More info → Run anyway**. Your tasks are kept in
-`%APPDATA%\Task Manager\`, with a backup on every launch.
+Just download and run the `.exe` — no terminal needed. Windows will warn that
+the app is not digitally signed; click **More info → Run anyway**. Your tasks
+are kept in `%APPDATA%\Task Manager\`, with a backup on every launch.
 
 ## Stack
 

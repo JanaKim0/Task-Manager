@@ -4,7 +4,7 @@
  */
 export const APP_INFO = {
   name: 'Task Manager',
-  version: '1.0.0',
+  version: '1.1.0',
   author: 'Jana Kim',
   repository: 'https://github.com/JanaKim0/Task-Manager',
 } as const;
