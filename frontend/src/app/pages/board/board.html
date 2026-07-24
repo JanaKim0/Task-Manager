@@ -1,5 +1,19 @@
 @if (loading()) {
-  <p class="muted">Loading the board...</p>
+  <!-- Skeleton: the same shape as the real board, so nothing jumps
+       around once the data arrives. -->
+  <div class="skeleton-head">
+    <span class="sk sk--title"></span>
+    <span class="sk sk--line"></span>
+  </div>
+  <div class="columns" aria-hidden="true">
+    @for (placeholder of [0, 1, 2]; track placeholder) {
+      <section class="column">
+        <span class="sk sk--head"></span>
+        <span class="sk sk--card"></span>
+        <span class="sk sk--card"></span>
+      </section>
+    }
+  </div>
 } @else if (error() && !board()) {
   <p class="error-text">{{ error() }}</p>
 } @else if (board(); as boardData) {
@@ -71,8 +85,18 @@
     }
   </section>
 
-  @if (error()) {
-    <p class="error-text">{{ error() }}</p>
+  @if (error(); as message) {
+    <div class="banner" role="alert">
+      <span>{{ message }}</span>
+      <button
+        class="btn btn--ghost btn--sm"
+        type="button"
+        title="Dismiss"
+        (click)="dismissError()"
+      >
+        ✕
+      </button>
+    </div>
   }
 
   @if (filtersActive() && visibleCards() === 0) {
@@ -84,11 +108,30 @@
     </div>
   }
 
-  <div class="columns">
+  @if (!dragEnabled()) {
+    <p class="drag-hint muted">
+      Dragging is paused while a filter is on — reset the filters to rearrange
+      cards.
+    </p>
+  }
+
+  <div
+    class="columns"
+    cdkDropList
+    cdkDropListOrientation="horizontal"
+    [cdkDropListData]="visibleColumns()"
+    [cdkDropListDisabled]="!dragEnabled()"
+    (cdkDropListDropped)="dropColumn($event)"
+  >
     @for (column of visibleColumns(); track column.id) {
-      <section class="column">
+      <section class="column" cdkDrag [cdkDragDisabled]="!dragEnabled()">
         <header class="column__head">
           <h2 class="column__title">
+            @if (dragEnabled()) {
+              <span class="column__grip" cdkDragHandle title="Drag the column">
+                ⠿
+              </span>
+            }
             {{ column.name }}
             <span class="column__count">{{ column.cards.length }}</span>
           </h2>
@@ -102,9 +145,22 @@
           </button>
         </header>
 
-        <ul class="cards">
+        <ul
+          class="cards"
+          cdkDropList
+          [id]="'cards-' + column.id"
+          [cdkDropListData]="column"
+          [cdkDropListConnectedTo]="cardListIds()"
+          [cdkDropListDisabled]="!dragEnabled()"
+          (cdkDropListDropped)="dropCard($event)"
+        >
           @for (card of column.cards; track card.id) {
-            <li class="task" [class.task--done]="card.done">
+            <li
+              class="task"
+              cdkDrag
+              [cdkDragDisabled]="!dragEnabled()"
+              [class.task--done]="card.done"
+            >
               <label class="task__check">
                 <input
                   type="checkbox"

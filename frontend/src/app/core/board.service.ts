@@ -52,6 +52,25 @@ export class BoardService {
     return this.http.patch<Card>(`${this.api}/cards/${id}/toggle`, {});
   }
 
+  /** Saves where a dragged card landed. */
+  moveCard(
+    id: string,
+    payload: { columnId?: string; position: number },
+  ): Observable<Card> {
+    return this.http.patch<Card>(`${this.api}/cards/${id}/move`, payload);
+  }
+
+  /** Saves the new left-to-right order of the columns. */
+  reorderColumns(
+    boardId: string,
+    orderedIds: string[],
+  ): Observable<BoardColumn[]> {
+    return this.http.patch<BoardColumn[]>(`${this.api}/columns/reorder`, {
+      boardId,
+      orderedIds,
+    });
+  }
+
   removeCard(id: string): Observable<Card> {
     return this.http.delete<Card>(`${this.api}/cards/${id}`);
   }

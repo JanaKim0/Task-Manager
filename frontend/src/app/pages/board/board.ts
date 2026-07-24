@@ -2,6 +2,14 @@ import { Component, computed, inject, Input, OnInit, signal } from '@angular/cor
 import { RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import {
+  CdkDrag,
+  CdkDragDrop,
+  CdkDragHandle,
+  CdkDropList,
+  moveItemInArray,
+  transferArrayItem,
+} from '@angular/cdk/drag-drop';
 import { BoardService } from '../../core/board.service';
 import {
   Board,
@@ -17,13 +25,20 @@ import {
   PRIORITY_LABELS,
 } from '../../core/models';
 import { readHttpError } from '../../core/http-error';
+import { ConfirmService } from '../../core/confirm.service';
 
 /** How a deadline should be shown to the user. */
 type DueState = 'overdue' | 'today' | 'soon' | 'later' | 'none';
 
 @Component({
   selector: 'app-board',
-  imports: [RouterLink, ReactiveFormsModule],
+  imports: [
+    RouterLink,
+    ReactiveFormsModule,
+    CdkDrag,
+    CdkDragHandle,
+    CdkDropList,
+  ],
   templateUrl: './board.html',
   styleUrl: './board.scss',
 })
@@ -32,6 +47,7 @@ export class BoardComponent implements OnInit {
 
   private readonly api = inject(BoardService);
   private readonly fb = inject(FormBuilder);
+  private readonly confirm = inject(ConfirmService);
 
   readonly board = signal<Board | null>(null);
   readonly loading = signal(true);
@@ -92,6 +108,18 @@ export class BoardComponent implements OnInit {
       f.hideDone
     );
   });
+
+  /**
+   * Drag & drop is switched off while a filter is on. The indexes the CDK
+   * reports refer to what is on screen, and with cards hidden those no longer
+   * match the real positions — a drop would land somewhere unintended.
+   */
+  readonly dragEnabled = computed(() => !this.filtersActive());
+
+  /** Ids of the card lists, so each column accepts cards from the others. */
+  readonly cardListIds = computed(() =>
+    this.columns().map((column) => `cards-${column.id}`),
+  );
 
   readonly totalCards = computed(() =>
     this.columns().reduce((sum, column) => sum + column.cards.length, 0),
@@ -238,11 +266,15 @@ export class BoardComponent implements OnInit {
     });
   }
 
-  removeColumn(column: BoardColumn): void {
-    const warning = column.cards.length
-      ? `Delete "${column.name}" and its ${column.cards.length} card(s)?`
-      : `Delete "${column.name}"?`;
-    if (!confirm(warning)) {
+  async removeColumn(column: BoardColumn): Promise<void> {
+    const ok = await this.confirm.ask({
+      title: `Delete "${column.name}"?`,
+      message: column.cards.length
+        ? `${column.cards.length} card(s) inside will be deleted too. This cannot be undone.`
+        : 'This cannot be undone.',
+      confirmLabel: 'Delete column',
+    });
+    if (!ok) {
       return;
     }
 
@@ -254,6 +286,93 @@ export class BoardComponent implements OnInit {
         })),
       error: (err: HttpErrorResponse) => this.error.set(readHttpError(err)),
     });
+  }
+
+  // ---------- drag & drop ----------
+
+  /**
+   * A card was dropped, either inside its own column or into another one.
+   *
+   * The board is updated on screen first and the request goes out after —
+   * waiting for the server would make the card snap back under the cursor.
+   * If the request fails, the snapshot taken beforehand is put back.
+   */
+  dropCard(event: CdkDragDrop<BoardColumn>): void {
+    const from = event.previousContainer.data;
+    const to = event.container.data;
+    const sameColumn = from.id === to.id;
+
+    if (sameColumn && event.previousIndex === event.currentIndex) {
+      return;
+    }
+
+    const snapshot = this.columns();
+    const fromCards = [...from.cards];
+    const card = fromCards[event.previousIndex];
+    if (!card) {
+      return;
+    }
+
+    if (sameColumn) {
+      moveItemInArray(fromCards, event.previousIndex, event.currentIndex);
+      this.setColumnCards(from.id, fromCards);
+    } else {
+      const toCards = [...to.cards];
+      transferArrayItem(
+        fromCards,
+        toCards,
+        event.previousIndex,
+        event.currentIndex,
+      );
+      this.setColumnCards(from.id, fromCards);
+      this.setColumnCards(
+        to.id,
+        // The card now belongs to the other column.
+        toCards.map((c) => (c.id === card.id ? { ...c, columnId: to.id } : c)),
+      );
+    }
+
+    this.api
+      .moveCard(card.id, {
+        columnId: sameColumn ? undefined : to.id,
+        position: event.currentIndex,
+      })
+      .subscribe({
+        next: () => this.error.set(null),
+        error: (err: HttpErrorResponse) => {
+          this.setColumns(snapshot);
+          this.error.set(readHttpError(err));
+        },
+      });
+  }
+
+  /** A column was dragged to a new place in the row. */
+  dropColumn(event: CdkDragDrop<BoardColumn[]>): void {
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+
+    const snapshot = this.columns();
+    const reordered = [...snapshot];
+    moveItemInArray(reordered, event.previousIndex, event.currentIndex);
+    this.setColumns(reordered);
+
+    this.api
+      .reorderColumns(
+        this.id,
+        reordered.map((column) => column.id),
+      )
+      .subscribe({
+        next: () => this.error.set(null),
+        error: (err: HttpErrorResponse) => {
+          this.setColumns(snapshot);
+          this.error.set(readHttpError(err));
+        },
+      });
+  }
+
+  dismissError(): void {
+    this.error.set(null);
   }
 
   // ---------- creating cards ----------
@@ -376,8 +495,13 @@ export class BoardComponent implements OnInit {
     });
   }
 
-  removeCard(card: Card): void {
-    if (!confirm(`Delete "${card.title}"?`)) {
+  async removeCard(card: Card): Promise<void> {
+    const ok = await this.confirm.ask({
+      title: `Delete "${card.title}"?`,
+      message: 'The card, its notes and its checklist will be removed.',
+      confirmLabel: 'Delete card',
+    });
+    if (!ok) {
       return;
     }
 
@@ -612,6 +736,15 @@ export class BoardComponent implements OnInit {
         cards: column.cards.map((c) => (c.id === card.id ? card : c)),
       })),
     }));
+  }
+
+  private setColumnCards(columnId: string, cards: Card[]): void {
+    this.updateColumn(columnId, (column) => ({ ...column, cards }));
+  }
+
+  /** Replaces the whole column list — used by drag & drop and its rollback. */
+  private setColumns(columns: BoardColumn[]): void {
+    this.patchBoard((board) => ({ ...board, columns }));
   }
 
   private updateColumn(
