@@ -39,9 +39,10 @@ Two ways of saying the same thing would only contradict each other.
 
 ```
 Task Manager/
-├── backend/    NestJS API (port 3000)
+├── backend/    NestJS API (port 3333)
 ├── frontend/   Angular SPA (port 4200)
-└── docs/       roadmap and database notes
+├── desktop/    Electron wrapper — the installable Windows app
+└── docs/       roadmap, deployment and desktop notes
 ```
 
 ## Running it
@@ -59,6 +60,16 @@ cd frontend && npm install && npm start
 ```
 
 Then open http://localhost:4200
+
+### As a desktop app
+
+```bash
+cd desktop && npm install && npm run dist
+```
+
+produces `desktop/release/Task Manager Setup 1.0.0.exe`. The installed app
+needs no terminals, and keeps its data in `%APPDATA%\Task Manager\` with a
+backup on every launch — see [docs/DESKTOP.md](docs/DESKTOP.md).
 
 Useful extras:
 
@@ -94,7 +105,7 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for the full schema and the build plan.
 - [x] **Stage 3** — notes, checklists and board filters
 - [x] **Stage 4** — drag & drop and polish
 - [x] **Stage 5** — languages, themes and authorship
-- [ ] **Stage 6** — desktop app: a double-clickable icon instead of a localhost URL
+- [x] **Stage 6** — [desktop app](docs/DESKTOP.md): installer, data kept safe from updates
 - [ ] **Stage 7** — release: deployment and a Serbian README
 
 ## Author
