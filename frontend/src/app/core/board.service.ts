@@ -86,6 +86,10 @@ export class BoardService {
     return this.http.post<Note>(`${this.api}/notes`, dto);
   }
 
+  updateNote(id: string, body: string): Observable<Note> {
+    return this.http.patch<Note>(`${this.api}/notes/${id}`, { body });
+  }
+
   removeNote(id: string): Observable<Note> {
     return this.http.delete<Note>(`${this.api}/notes/${id}`);
   }

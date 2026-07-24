@@ -1,6 +1,13 @@
-import { Body, Controller, Delete, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { NotesService } from './notes.service';
-import { CreateNoteDto } from './dto/create-note.dto';
+import { CreateNoteDto, UpdateNoteDto } from './dto/create-note.dto';
 
 @Controller('notes')
 export class NotesController {
@@ -10,6 +17,12 @@ export class NotesController {
   @Post()
   create(@Body() dto: CreateNoteDto) {
     return this.notes.create(dto);
+  }
+
+  /** PATCH /api/notes/:id */
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateNoteDto) {
+    return this.notes.update(id, dto);
   }
 
   /** DELETE /api/notes/:id */

@@ -31,7 +31,11 @@ model Workspace {
 model Project {
   id          String   @id @default(uuid())
   name        String
+  // Short blurb shown on the project card in the workspace list.
   description String?
+  // The long version: a specification written before the work is split
+  // into cards. Lives on the board screen, above the filters.
+  brief       String?
   color       String   @default("#e8749c")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

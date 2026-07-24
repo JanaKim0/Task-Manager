@@ -22,6 +22,114 @@
   font-size: 0.85rem;
 }
 
+/* ---------- project brief ---------- */
+
+.brief {
+  margin-bottom: 1rem;
+}
+
+.brief__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.brief__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.brief__toggle:hover {
+  color: var(--accent);
+}
+
+.brief__arrow {
+  display: inline-block;
+  transition: transform 0.15s;
+  font-size: 0.7rem;
+}
+
+.brief__arrow--open {
+  transform: rotate(90deg);
+}
+
+.brief__text {
+  margin: 0.4rem 0 0;
+  padding: 0.9rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  /* Keeps the paragraph breaks the user typed. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  /* A long specification scrolls here instead of pushing the board down. */
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.brief__add {
+  padding: 0.4rem 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.brief__add:hover {
+  color: var(--accent);
+}
+
+.brief__editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.brief__label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.brief__editor textarea {
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  background: var(--surface);
+  color: var(--text);
+  resize: vertical;
+}
+
+.brief__editor textarea:focus {
+  outline: 3px solid var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.brief__actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
 /* ---------- filter bar ---------- */
 
 .filters {
@@ -96,7 +204,10 @@
 }
 
 .column {
-  flex: 0 0 300px;
+  /* Roughly twice the old width: cards now carry a note preview under the
+     title, and a narrow column turned that into a column of single words.
+     min() keeps it from overflowing a small window. */
+  flex: 0 0 min(600px, 88vw);
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -136,6 +247,37 @@
   background: var(--accent-soft);
   color: var(--accent);
   font-size: 0.72rem;
+}
+
+/* The column name doubles as the button that starts renaming it. */
+.column__name {
+  border: none;
+  background: transparent;
+  padding: 0.1rem 0.25rem;
+  margin-left: -0.25rem;
+  border-radius: 6px;
+  font: inherit;
+  color: inherit;
+  cursor: text;
+  text-align: left;
+}
+
+.column__name:hover {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+.column__rename {
+  flex: 1;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: var(--surface);
+  color: var(--text);
+  outline: 3px solid var(--accent-soft);
 }
 
 .column__grip {
@@ -223,8 +365,26 @@
 
 .task__title {
   margin: 0;
-  font-size: 0.89rem;
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.35;
   overflow-wrap: anywhere;
+}
+
+/* Preview of the newest note: smaller and lighter than the title, so the
+   card still reads title-first. Cut off after three lines. */
+.task__note {
+  margin: 0.3rem 0 0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .task__meta {
@@ -654,6 +814,12 @@
   border-radius: 10px;
 }
 
+.note__content {
+  flex: 1;
+  cursor: text;
+  min-width: 0;
+}
+
 .note__body {
   margin: 0;
   font-size: 0.88rem;
@@ -663,6 +829,35 @@
 
 .note__date {
   font-size: 0.73rem;
+}
+
+.note__buttons {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.note__editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.note__editor textarea {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--accent);
+  border-radius: 9px;
+  font: inherit;
+  font-size: 0.88rem;
+  background: var(--surface);
+  color: var(--text);
+  outline: 3px solid var(--accent-soft);
+  resize: vertical;
+}
+
+.note__actions {
+  display: flex;
+  gap: 0.35rem;
 }
 
 @media (max-width: 640px) {

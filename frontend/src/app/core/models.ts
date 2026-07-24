@@ -25,7 +25,10 @@ export interface Workspace {
 export interface Project {
   id: string;
   name: string;
+  /** Short blurb shown on the project card in the workspace list. */
   description: string | null;
+  /** The long specification, edited on the board screen. */
+  brief?: string | null;
   color: string;
   workspaceId: string;
   createdAt: string;
@@ -40,7 +43,7 @@ export interface Board {
   name: string;
   order: number;
   projectId: string;
-  project?: Pick<Project, 'id' | 'name' | 'color' | 'workspaceId'>;
+  project?: Pick<Project, 'id' | 'name' | 'color' | 'workspaceId' | 'brief'>;
   columns?: BoardColumn[];
 }
 
@@ -66,7 +69,10 @@ export interface Card {
   updatedAt: string;
   // Checklist items travel with the board so cards can show "2/5".
   checklist: ChecklistItem[];
-  // Notes are only loaded when a card is opened.
+  /**
+   * From the board response this holds only the newest note, shown as a
+   * preview on the card. Opening a card replaces it with the full list.
+   */
   notes?: Note[];
   _count?: { notes: number };
 }
@@ -75,8 +81,9 @@ export interface Card {
 export interface Note {
   id: string;
   body: string;
-  createdAt: string;
-  cardId: string;
+  // Absent on the preview that comes with the board response.
+  createdAt?: string;
+  cardId?: string;
 }
 
 /** A sub-task inside a card, ticked independently of the card itself. */
@@ -102,6 +109,7 @@ export type UpdateWorkspaceDto = Partial<CreateWorkspaceDto>;
 export interface CreateProjectDto {
   name: string;
   description?: string;
+  brief?: string | null;
   color?: string;
   workspaceId: string;
 }

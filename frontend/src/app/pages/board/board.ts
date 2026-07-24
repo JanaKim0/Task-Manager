@@ -11,6 +11,7 @@ import {
   transferArrayItem,
 } from '@angular/cdk/drag-drop';
 import { BoardService } from '../../core/board.service';
+import { ProjectService } from '../../core/project.service';
 import {
   Board,
   BoardColumn,
@@ -47,6 +48,7 @@ export class BoardComponent implements OnInit {
   @Input() id!: string;
 
   private readonly api = inject(BoardService);
+  private readonly projects = inject(ProjectService);
   private readonly fb = inject(FormBuilder);
   private readonly confirm = inject(ConfirmService);
   private readonly settings = inject(SettingsService);
@@ -64,6 +66,26 @@ export class BoardComponent implements OnInit {
 
   readonly showColumnForm = signal(false);
   readonly newColumnName = signal('');
+
+  /** Column being renamed inline, and the text being typed into it. */
+  readonly renamingColumn = signal<string | null>(null);
+  readonly renamedColumnName = signal('');
+
+  // ---------- project brief ----------
+
+  // Open by default: the brief is written to be read while working, not
+  // hidden. A long one scrolls inside its own box rather than pushing the
+  // board off the screen.
+  readonly briefOpen = signal(true);
+  readonly briefEditing = signal(false);
+  readonly briefDraft = signal('');
+  readonly briefSaving = signal(false);
+
+  // ---------- note editing ----------
+
+  /** Note being edited in the card dialog, and its working copy. */
+  readonly editingNote = signal<string | null>(null);
+  readonly editedNoteBody = signal('');
 
   // ---------- card editor state ----------
 
@@ -400,6 +422,89 @@ export class BoardComponent implements OnInit {
     this.error.set(null);
   }
 
+  // ---------- renaming a column ----------
+
+  startRenameColumn(column: BoardColumn): void {
+    this.renamingColumn.set(column.id);
+    // Shows the translated default so it is not replaced by English on save.
+    this.renamedColumnName.set(this.displayName(column.name));
+  }
+
+  cancelRenameColumn(): void {
+    this.renamingColumn.set(null);
+    this.renamedColumnName.set('');
+  }
+
+  saveColumnName(column: BoardColumn): void {
+    const name = this.renamedColumnName().trim();
+
+    if (!name || name === column.name) {
+      this.cancelRenameColumn();
+      return;
+    }
+
+    const previous = column.name;
+    this.updateColumn(column.id, (c) => ({ ...c, name }));
+    this.cancelRenameColumn();
+
+    this.api.updateColumn(column.id, { name }).subscribe({
+      next: () => this.error.set(null),
+      error: (err: HttpErrorResponse) => {
+        this.updateColumn(column.id, (c) => ({ ...c, name: previous }));
+        this.error.set(readHttpError(err, this.settings.language()));
+      },
+    });
+  }
+
+  // ---------- project brief ----------
+
+  toggleBrief(): void {
+    this.briefOpen.update((open) => !open);
+    if (!this.briefOpen()) {
+      this.briefEditing.set(false);
+    }
+  }
+
+  startEditBrief(): void {
+    this.briefDraft.set(this.board()?.project?.brief ?? '');
+    this.briefEditing.set(true);
+    this.briefOpen.set(true);
+  }
+
+  cancelEditBrief(): void {
+    this.briefEditing.set(false);
+    this.briefDraft.set('');
+  }
+
+  saveBrief(): void {
+    const project = this.board()?.project;
+    if (!project) {
+      return;
+    }
+
+    const brief = this.briefDraft().trim();
+    this.briefSaving.set(true);
+
+    // An empty box means "no brief", which the API stores as null.
+    this.projects.update(project.id, { brief: brief || null }).subscribe({
+      next: () => {
+        this.patchBoard((board) => ({
+          ...board,
+          project: board.project
+            ? { ...board.project, brief: brief || null }
+            : board.project,
+        }));
+        this.briefEditing.set(false);
+        this.briefSaving.set(false);
+        this.error.set(null);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.error.set(readHttpError(err, this.settings.language()));
+        this.briefSaving.set(false);
+      },
+    });
+  }
+
   // ---------- creating cards ----------
 
   startAddCard(columnId: string): void {
@@ -467,6 +572,7 @@ export class BoardComponent implements OnInit {
     this.checklist.set([]);
     this.newNote.set('');
     this.newChecklistItem.set('');
+    this.cancelEditNote();
     this.cardForm.reset({ priority: 'MEDIUM' });
   }
 
@@ -557,19 +663,78 @@ export class BoardComponent implements OnInit {
         this.notes.update((list) => [note, ...list]);
         this.newNote.set('');
         this.bumpNoteCount(card.id, 1);
+        this.setNotePreview(card.id, note);
       },
       error: (err: HttpErrorResponse) => this.error.set(readHttpError(err, this.settings.language())),
     });
   }
 
+  startEditNote(note: Note): void {
+    this.editingNote.set(note.id);
+    this.editedNoteBody.set(note.body);
+  }
+
+  cancelEditNote(): void {
+    this.editingNote.set(null);
+    this.editedNoteBody.set('');
+  }
+
+  saveNote(note: Note): void {
+    const body = this.editedNoteBody().trim();
+
+    if (!body || body === note.body) {
+      this.cancelEditNote();
+      return;
+    }
+
+    this.api.updateNote(note.id, body).subscribe({
+      next: (updated) => {
+        this.notes.update((list) =>
+          list.map((n) => (n.id === note.id ? { ...n, ...updated } : n)),
+        );
+        // The card on the board shows the newest note, so it may need to
+        // show the new text as well.
+        this.refreshNotePreview(note.id, body);
+        this.cancelEditNote();
+        this.error.set(null);
+      },
+      error: (err: HttpErrorResponse) =>
+        this.error.set(readHttpError(err, this.settings.language())),
+    });
+  }
+
   removeNote(note: Note): void {
+    const card = this.editingCard();
+    if (!card) {
+      return;
+    }
+
     this.api.removeNote(note.id).subscribe({
       next: () => {
-        this.notes.update((list) => list.filter((n) => n.id !== note.id));
-        this.bumpNoteCount(note.cardId, -1);
+        const remaining = this.notes().filter((n) => n.id !== note.id);
+        this.notes.set(remaining);
+        this.bumpNoteCount(card.id, -1);
+        // Deleting the newest note promotes the next one to the preview.
+        this.setNotePreview(card.id, remaining[0] ?? null);
       },
-      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err, this.settings.language())),
+      error: (err: HttpErrorResponse) =>
+        this.error.set(readHttpError(err, this.settings.language())),
     });
+  }
+
+  /** Puts a note (or nothing) into the preview slot the board reads. */
+  private setNotePreview(cardId: string, note: Note | null): void {
+    this.patchBoard((board) => ({
+      ...board,
+      columns: (board.columns ?? []).map((column) => ({
+        ...column,
+        cards: column.cards.map((card) =>
+          card.id === cardId
+            ? { ...card, notes: note ? [{ id: note.id, body: note.body }] : [] }
+            : card,
+        ),
+      })),
+    }));
   }
 
   // ---------- checklist ----------
@@ -624,6 +789,35 @@ export class BoardComponent implements OnInit {
     });
   }
 
+  /**
+   * Translates the names the app generated itself ("Main board", "To do").
+   * Anything the user typed is returned untouched.
+   */
+  displayName(name: string): string {
+    const defaults: Record<string, string> = this.t().defaults;
+    return defaults[name] ?? name;
+  }
+
+  /** The newest note on a card, shown as a preview under the title. */
+  notePreview(card: Card): string | null {
+    return card.notes?.[0]?.body ?? null;
+  }
+
+  /** Keeps that preview in step after a note is edited in the dialog. */
+  private refreshNotePreview(noteId: string, body: string): void {
+    this.patchBoard((board) => ({
+      ...board,
+      columns: (board.columns ?? []).map((column) => ({
+        ...column,
+        cards: column.cards.map((card) =>
+          card.notes?.[0]?.id === noteId
+            ? { ...card, notes: [{ ...card.notes[0], body }] }
+            : card,
+        ),
+      })),
+    }));
+  }
+
   /** "2/5" for the badge on a card, or an empty string when there is no list. */
   checklistProgress(card: Card): string {
     const items = card.checklist ?? [];
@@ -676,6 +870,12 @@ export class BoardComponent implements OnInit {
   }
 
   noteDate(note: Note): string {
+    // The preview that arrives with the board carries no timestamp; only the
+    // full list opened in the dialog does.
+    if (!note.createdAt) {
+      return '';
+    }
+
     return new Date(note.createdAt).toLocaleDateString(
       this.settings.dateLocale(),
       {

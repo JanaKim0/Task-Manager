@@ -24,7 +24,7 @@
           ← {{ project.name }}
         </a>
       }
-      <h1>{{ boardData.name }}</h1>
+      <h1>{{ displayName(boardData.name) }}</h1>
       <p class="muted">
         {{ progressLabel() }}
         @if (filtersActive()) {
@@ -35,6 +35,63 @@
     <button class="btn" type="button" (click)="openColumnForm()">
       {{ t().board.addColumn }}
     </button>
+  </section>
+
+  <!-- Project brief: the long description, written before the work is
+       broken down into cards. -->
+  <section class="brief">
+    @if (briefEditing()) {
+      <div class="brief__editor">
+        <label class="brief__label" for="brief">{{ t().board.brief }}</label>
+        <textarea
+          id="brief"
+          rows="10"
+          [placeholder]="t().board.briefPlaceholder"
+          [value]="briefDraft()"
+          (input)="briefDraft.set($any($event.target).value)"
+        ></textarea>
+        <div class="brief__actions">
+          <button
+            class="btn btn--primary btn--sm"
+            type="button"
+            [disabled]="briefSaving()"
+            (click)="saveBrief()"
+          >
+            {{ briefSaving() ? t().common.saving : t().common.save }}
+          </button>
+          <button
+            class="btn btn--ghost btn--sm"
+            type="button"
+            (click)="cancelEditBrief()"
+          >
+            {{ t().common.cancel }}
+          </button>
+        </div>
+      </div>
+    } @else if (boardData.project?.brief) {
+      <div class="brief__head">
+        <button class="brief__toggle" type="button" (click)="toggleBrief()">
+          <span class="brief__arrow" [class.brief__arrow--open]="briefOpen()">
+            ▸
+          </span>
+          {{ t().board.brief }}
+        </button>
+        <button
+          class="btn btn--ghost btn--sm"
+          type="button"
+          (click)="startEditBrief()"
+        >
+          {{ t().common.edit }}
+        </button>
+      </div>
+      @if (briefOpen()) {
+        <p class="brief__text">{{ boardData.project?.brief }}</p>
+      }
+    } @else {
+      <button class="brief__add" type="button" (click)="startEditBrief()">
+        {{ t().board.briefAdd }}
+      </button>
+    }
   </section>
 
   <!-- Filter bar -->
@@ -123,27 +180,46 @@
     @for (column of visibleColumns(); track column.id) {
       <section class="column" cdkDrag [cdkDragDisabled]="!dragEnabled()">
         <header class="column__head">
-          <h2 class="column__title">
-            @if (dragEnabled()) {
-              <span
-                class="column__grip"
-                cdkDragHandle
-                [title]="t().board.dragColumn"
+          @if (renamingColumn() === column.id) {
+            <input
+              class="column__rename"
+              [value]="renamedColumnName()"
+              (input)="renamedColumnName.set($any($event.target).value)"
+              (keydown.enter)="saveColumnName(column)"
+              (keydown.escape)="cancelRenameColumn()"
+              (blur)="saveColumnName(column)"
+              autofocus
+            />
+          } @else {
+            <h2 class="column__title">
+              @if (dragEnabled()) {
+                <span
+                  class="column__grip"
+                  cdkDragHandle
+                  [title]="t().board.dragColumn"
+                >
+                  ⠿
+                </span>
+              }
+              <button
+                class="column__name"
+                type="button"
+                [title]="t().board.renameColumn"
+                (click)="startRenameColumn(column)"
               >
-                ⠿
-              </span>
-            }
-            {{ column.name }}
-            <span class="column__count">{{ column.cards.length }}</span>
-          </h2>
-          <button
-            class="btn btn--ghost btn--sm"
-            type="button"
-            [title]="t().board.deleteColumn"
-            (click)="removeColumn(column)"
-          >
-            ✕
-          </button>
+                {{ displayName(column.name) }}
+              </button>
+              <span class="column__count">{{ column.cards.length }}</span>
+            </h2>
+            <button
+              class="btn btn--ghost btn--sm"
+              type="button"
+              [title]="t().board.deleteColumn"
+              (click)="removeColumn(column)"
+            >
+              ✕
+            </button>
+          }
         </header>
 
         <ul
@@ -173,6 +249,10 @@
 
               <div class="task__body" (click)="openEditor(card)">
                 <p class="task__title">{{ card.title }}</p>
+
+                @if (notePreview(card); as preview) {
+                  <p class="task__note">{{ preview }}</p>
+                }
 
                 <div class="task__meta">
                   @if (card.dueDate) {
@@ -445,18 +525,58 @@
         <ul class="notes">
           @for (note of notes(); track note.id) {
             <li class="note">
-              <div>
-                <p class="note__body">{{ note.body }}</p>
-                <span class="note__date muted">{{ noteDate(note) }}</span>
-              </div>
-              <button
-                class="btn btn--ghost btn--sm"
-                type="button"
-                [title]="t().common.delete"
-                (click)="removeNote(note)"
-              >
-                ✕
-              </button>
+              @if (editingNote() === note.id) {
+                <div class="note__editor">
+                  <textarea
+                    rows="3"
+                    [value]="editedNoteBody()"
+                    (input)="editedNoteBody.set($any($event.target).value)"
+                    (keydown.escape)="cancelEditNote()"
+                  ></textarea>
+                  <div class="note__actions">
+                    <button
+                      class="btn btn--primary btn--sm"
+                      type="button"
+                      [disabled]="!editedNoteBody().trim()"
+                      (click)="saveNote(note)"
+                    >
+                      {{ t().card.noteSave }}
+                    </button>
+                    <button
+                      class="btn btn--ghost btn--sm"
+                      type="button"
+                      (click)="cancelEditNote()"
+                    >
+                      {{ t().common.cancel }}
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <div class="note__content" (click)="startEditNote(note)">
+                  <p class="note__body">{{ note.body }}</p>
+                  @if (noteDate(note); as date) {
+                    <span class="note__date muted">{{ date }}</span>
+                  }
+                </div>
+                <span class="note__buttons">
+                  <button
+                    class="btn btn--ghost btn--sm"
+                    type="button"
+                    [title]="t().card.noteEdit"
+                    (click)="startEditNote(note)"
+                  >
+                    ✎
+                  </button>
+                  <button
+                    class="btn btn--ghost btn--sm"
+                    type="button"
+                    [title]="t().common.delete"
+                    (click)="removeNote(note)"
+                  >
+                    ✕
+                  </button>
+                </span>
+              }
             </li>
           }
         </ul>

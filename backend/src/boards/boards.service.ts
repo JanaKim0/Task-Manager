@@ -18,6 +18,7 @@ export class BoardsService {
             id: true,
             name: true,
             color: true,
+            brief: true,
             workspaceId: true,
           },
         },
@@ -33,6 +34,13 @@ export class BoardsService {
                 // Checklist items are tiny, so they come with the board and
                 // the card can show "2/5" without another request.
                 checklist: { orderBy: { order: 'asc' } },
+                // Only the newest note, as a preview under the card title.
+                // The rest are loaded when the card is opened.
+                notes: {
+                  orderBy: { createdAt: 'desc' },
+                  take: 1,
+                  select: { id: true, body: true },
+                },
                 _count: { select: { notes: true } },
               },
             },

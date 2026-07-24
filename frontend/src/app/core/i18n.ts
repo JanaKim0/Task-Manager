@@ -113,6 +113,24 @@ const en = {
     columnDeleteWithCards:
       '{count} card(s) inside will be deleted too. This cannot be undone.',
     columnDeleteEmpty: 'This cannot be undone.',
+    renameColumn: 'Rename the column',
+    brief: 'Project brief',
+    briefAdd: '+ Add a project brief',
+    briefPlaceholder:
+      'Specification, requirements, ideas — everything worth writing down before it becomes cards.',
+    briefEdit: 'Edit the brief',
+    briefEmpty: 'Nothing written yet.',
+  },
+
+  /**
+   * Names the app itself generates for a new project. They are translated
+   * only while they are still untouched — once renamed, the text is the
+   * user's own and is left exactly as typed.
+   */
+  defaults: {
+    'Main board': 'Main board',
+    'To do': 'To do',
+    'In progress': 'In progress',
   },
 
   filters: {
@@ -154,6 +172,8 @@ const en = {
     notesEmpty: 'No notes yet.',
     notesLoading: 'Loading notes...',
     notePlaceholder: 'What happened, what to remember...',
+    noteEdit: 'Edit the note',
+    noteSave: 'Save',
   },
 
   priority: {
@@ -275,6 +295,19 @@ const ru: Dictionary = {
     columnDeleteWithCards:
       'Карточек внутри: {count}. Они тоже будут удалены. Это необратимо.',
     columnDeleteEmpty: 'Это необратимо.',
+    renameColumn: 'Переименовать колонку',
+    brief: 'Описание проекта',
+    briefAdd: '+ Добавить описание проекта',
+    briefPlaceholder:
+      'Спецификация, требования, идеи — всё, что стоит записать до того, как оно превратится в карточки.',
+    briefEdit: 'Редактировать описание',
+    briefEmpty: 'Пока ничего не записано.',
+  },
+
+  defaults: {
+    'Main board': 'Основная доска',
+    'To do': 'К выполнению',
+    'In progress': 'В работе',
   },
 
   filters: {
@@ -316,6 +349,8 @@ const ru: Dictionary = {
     notesEmpty: 'Заметок пока нет.',
     notesLoading: 'Загружаю заметки...',
     notePlaceholder: 'Что произошло, что нужно помнить...',
+    noteEdit: 'Редактировать заметку',
+    noteSave: 'Сохранить',
   },
 
   priority: {
