@@ -8,6 +8,8 @@ planner, so everything on screen belongs to whoever runs the app.
 
 ### [⬇ Download for Windows](https://github.com/JanaKim0/Task-Manager/releases/latest)
 
+Just instal .exe
+
 An installer, no terminal needed. Windows will warn that the app is not
 digitally signed — click **More info → Run anyway**. Your tasks are kept in
 `%APPDATA%\Task Manager\`, with a backup on every launch.
@@ -51,7 +53,7 @@ Task Manager/
 └── docs/       roadmap, deployment and desktop notes
 ```
 
-## Running it
+## Running it !!!
 
 Backend, in the first terminal:
 
@@ -122,4 +124,4 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for the full schema and the build plan.
 Built by **Jana Kim** — [github.com/JanaKim0](https://github.com/JanaKim0)
 
 Licensed under the [MIT License](LICENSE). Written with AI assistance
-(Claude), which is recorded in the commit trailers.
+(Claude).
