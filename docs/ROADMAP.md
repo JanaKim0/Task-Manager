@@ -59,14 +59,20 @@ data in step (the dialog and the board badge), three-state optional fields.
 
 ## Stage 4 — Drag & drop and release
 
-- [ ] Angular CDK `DragDropModule`: drag cards between columns
-- [ ] Drag columns to reorder them
-- [ ] Persist the new position through the API
-- [ ] Optimistic updates with rollback on failure
-- [ ] Responsive layout and loading skeletons
-- [ ] Deploy: backend on Render, frontend on Vercel, PostgreSQL database
+- [x] Angular CDK drag & drop: cards move within and between columns
+- [x] Columns reorder by dragging the grip in their header
+- [x] `PATCH /cards/:id/move` and `PATCH /columns/reorder` persist the result
+- [x] Optimistic updates with rollback when the request fails
+- [x] Dragging pauses while a filter is on, since visible indexes lie
+- [x] Loading skeletons shaped like the real board
+- [x] `confirm()` replaced by a dialog in the app's own style
+- [x] Dismissible error banner that clears itself on the next success
+- [x] `GET /api/health` for hosting health checks
+- [x] Production environment file and `fileReplacements` wiring
+- [ ] Actually deploy — needs accounts, see [DEPLOYMENT.md](DEPLOYMENT.md)
 
-**To learn:** the CDK, recalculating sort order, error recovery.
+**Learned:** the CDK, renumbering sort order inside a transaction, undoing a
+change on the screen when the server refuses it.
 
 ---
 
