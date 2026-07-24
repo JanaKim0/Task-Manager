@@ -1,6 +1,6 @@
 # Task Manager — build plan
 
-Five stages. Each one ends in a working state worth pushing to GitHub.
+Seven stages. Each one ends in a working state worth pushing to GitHub.
 
 ---
 
@@ -76,7 +76,27 @@ change on the screen when the server refuses it.
 
 ---
 
-## Stage 5 — Desktop app
+## Stage 5 — Languages, themes and authorship ✅
+
+Everything that changes how the app looks and speaks. Done before the
+desktop wrapper on purpose: each of these would otherwise have to be
+re-checked inside Electron and shipped as a new installer.
+
+- [x] English and Russian dictionaries in one typed file, no i18n library
+- [x] Language switches at runtime through a `computed` signal — no reload
+- [x] Dates and deadline labels follow the chosen language
+- [x] Second colour theme (neutral gray) beside the pink one
+- [x] Both choices remembered in `localStorage`
+- [x] Browser tab title translated too, via a custom `TitleStrategy`
+- [x] Author footer, `LICENSE`, and author fields in both `package.json`s
+
+**Learned:** runtime translation without a library, why a theme is easier to
+add when every colour is already a CSS variable, deriving one signal from
+another.
+
+---
+
+## Stage 6 — Desktop app
 
 The point of this stage is daily use: an icon on the desktop instead of
 starting two terminals and typing a localhost URL.
@@ -90,6 +110,16 @@ starting two terminals and typing a localhost URL.
 
 **To learn:** packaging, the difference between a dev server and a shipped
 binary, where a desktop app is allowed to store user data.
+
+---
+
+## Stage 7 — Release
+
+- [ ] Deploy the web version — see [DEPLOYMENT.md](DEPLOYMENT.md).
+      Do it on a branch: the switch to PostgreSQL would break the desktop
+      build, which stays on SQLite.
+- [ ] README in Serbian describing the features and the tools used
+- [ ] Make the repository public
 
 ---
 

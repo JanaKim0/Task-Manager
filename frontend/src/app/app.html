@@ -3,16 +3,54 @@
     <span class="topbar__mark">TM</span>
     {{ appName }}
   </a>
+
   <nav class="topbar__nav">
-    <a routerLink="/workspaces">Workspaces</a>
+    <a routerLink="/workspaces">{{ t().nav.workspaces }}</a>
   </nav>
+
+  <div class="topbar__settings">
+    <div class="switch" role="group" [attr.aria-label]="t().common.language">
+      @for (option of languages; track option.value) {
+        <button
+          class="switch__option"
+          type="button"
+          [class.switch__option--active]="language() === option.value"
+          (click)="setLanguage(option.value)"
+        >
+          {{ option.label }}
+        </button>
+      }
+    </div>
+
+    <div class="switch" role="group" [attr.aria-label]="t().common.theme">
+      @for (option of themes; track option) {
+        <button
+          class="switch__option"
+          type="button"
+          [class.switch__option--active]="theme() === option"
+          [title]="themeLabel(option)"
+          (click)="setTheme(option)"
+        >
+          <span class="switch__dot" [class]="'switch__dot--' + option"></span>
+        </button>
+      }
+    </div>
+  </div>
 </header>
 
 <main class="page" [class.page--wide]="wideLayout()">
   <router-outlet />
 </main>
 
+<footer class="footer">
+  <span>
+    {{ t().footer.builtBy }}
+    <strong>{{ info.author }}</strong> · {{ currentYear }}
+  </span>
+  <a [href]="info.repository" target="_blank" rel="noopener noreferrer">
+    {{ t().footer.sourceCode }}
+  </a>
+</footer>
+
 <!-- Rendered once here so any page can ask for a confirmation. -->
 <app-confirm-dialog />
-
-

@@ -1,15 +1,24 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { DICTIONARIES, Language } from './i18n';
 
 /**
  * Turns a failed request into a sentence a human can read.
- * Nest puts the reason in `message`, which is a string or an array of strings.
+ *
+ * Messages the API itself sends (validation errors) are passed through as
+ * they are; the connection-level ones are translated, since they never
+ * reach the server to be worded there.
  */
-export function readHttpError(err: HttpErrorResponse): string {
+export function readHttpError(
+  err: HttpErrorResponse,
+  language: Language = 'en',
+): string {
+  const t = DICTIONARIES[language].errors;
+
   if (err.status === 0) {
-    return 'Cannot reach the server. Is the backend running on port 3333?';
+    return t.offline;
   }
   if (err.status === 404) {
-    return 'Not found. It may have been deleted.';
+    return t.notFound;
   }
 
   const message: unknown = err.error?.message;
@@ -19,5 +28,5 @@ export function readHttpError(err: HttpErrorResponse): string {
   if (typeof message === 'string') {
     return message;
   }
-  return 'Something went wrong.';
+  return t.generic;
 }

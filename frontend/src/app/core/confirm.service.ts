@@ -4,6 +4,7 @@ export interface ConfirmRequest {
   title: string;
   message: string;
   confirmLabel: string;
+  cancelLabel: string;
   danger: boolean;
 }
 
@@ -12,6 +13,9 @@ export interface ConfirmRequest {
  *
  * A component calls `ask()` and awaits the answer; the dialog component
  * renders whatever sits in `request` and calls `answer()` on click.
+ *
+ * The labels are passed in rather than translated here, so the caller
+ * decides the wording in the language it is already using.
  */
 @Injectable({ providedIn: 'root' })
 export class ConfirmService {
@@ -22,7 +26,8 @@ export class ConfirmService {
   ask(options: {
     title: string;
     message: string;
-    confirmLabel?: string;
+    confirmLabel: string;
+    cancelLabel: string;
     danger?: boolean;
   }): Promise<boolean> {
     // If a dialog is somehow already open, treat it as cancelled.
@@ -31,7 +36,8 @@ export class ConfirmService {
     this.request.set({
       title: options.title,
       message: options.message,
-      confirmLabel: options.confirmLabel ?? 'Delete',
+      confirmLabel: options.confirmLabel,
+      cancelLabel: options.cancelLabel,
       danger: options.danger ?? true,
     });
 

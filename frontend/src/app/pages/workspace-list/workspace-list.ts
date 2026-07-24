@@ -6,6 +6,8 @@ import { WorkspaceService } from '../../core/workspace.service';
 import { Workspace } from '../../core/models';
 import { readHttpError } from '../../core/http-error';
 import { ConfirmService } from '../../core/confirm.service';
+import { SettingsService } from '../../core/settings.service';
+import { fill } from '../../core/i18n';
 
 @Component({
   selector: 'app-workspace-list',
@@ -17,6 +19,9 @@ export class WorkspaceListComponent implements OnInit {
   private readonly api = inject(WorkspaceService);
   private readonly fb = inject(FormBuilder);
   private readonly confirm = inject(ConfirmService);
+  private readonly settings = inject(SettingsService);
+
+  readonly t = this.settings.t;
 
   // A signal is a reactive box: call .set() and the template redraws itself.
   readonly workspaces = signal<Workspace[]>([]);
@@ -45,7 +50,7 @@ export class WorkspaceListComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err: HttpErrorResponse) => {
-        this.error.set(readHttpError(err));
+        this.error.set(this.readError(err));
         this.loading.set(false);
       },
     });
@@ -91,18 +96,19 @@ export class WorkspaceListComponent implements OnInit {
           this.saving.set(false);
         },
         error: (err: HttpErrorResponse) => {
-          this.error.set(readHttpError(err));
+          this.error.set(this.readError(err));
           this.saving.set(false);
         },
       });
   }
 
   async remove(workspace: Workspace): Promise<void> {
+    const text = this.t().workspaces;
     const ok = await this.confirm.ask({
-      title: `Delete "${workspace.name}"?`,
-      message:
-        'Every project, board and card inside it will be deleted too. This cannot be undone.',
-      confirmLabel: 'Delete workspace',
+      title: fill(text.deleteTitle, { name: workspace.name }),
+      message: text.deleteMessage,
+      confirmLabel: text.deleteConfirm,
+      cancelLabel: this.t().common.cancel,
     });
     if (!ok) {
       return;
@@ -113,8 +119,18 @@ export class WorkspaceListComponent implements OnInit {
         this.workspaces.update((list) =>
           list.filter((w) => w.id !== workspace.id),
         ),
-      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err)),
+      error: (err: HttpErrorResponse) => this.error.set(this.readError(err)),
     });
+  }
+
+  /** Word for "project" that matches the count, in the current language. */
+  projectLabel(count: number): string {
+    const text = this.t().workspaces;
+    return count === 1 ? text.projectCountOne : text.projectCount;
+  }
+
+  private readError(err: HttpErrorResponse): string {
+    return readHttpError(err, this.settings.language());
   }
 
   /** Latin transliteration so Cyrillic names still produce a usable slug. */

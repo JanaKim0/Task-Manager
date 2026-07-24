@@ -10,7 +10,9 @@ export const routes: Routes = [
     // loadComponent: the code for this screen is downloaded only when the
     // user actually opens the route.
     path: 'workspaces',
-    title: 'Workspaces — Task Manager',
+    // A key, not finished text: TranslatedTitleStrategy turns it into a
+    // tab name in the language currently selected.
+    title: 'workspaces',
     loadComponent: () =>
       import('./pages/workspace-list/workspace-list').then(
         (m) => m.WorkspaceListComponent,
@@ -18,7 +20,7 @@ export const routes: Routes = [
   },
   {
     path: 'workspaces/:id',
-    title: 'Workspace — Task Manager',
+    title: 'workspace',
     loadComponent: () =>
       import('./pages/workspace-detail/workspace-detail').then(
         (m) => m.WorkspaceDetailComponent,
@@ -26,7 +28,7 @@ export const routes: Routes = [
   },
   {
     path: 'boards/:id',
-    title: 'Board — Task Manager',
+    title: 'board',
     loadComponent: () =>
       import('./pages/board/board').then((m) => m.BoardComponent),
   },
