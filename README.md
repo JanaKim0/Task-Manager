@@ -6,6 +6,8 @@ projects, projects hold boards, boards hold columns, and columns hold cards.
 Single user by design — no accounts, no logins, no assignees. It is a personal
 planner, so everything on screen belongs to whoever runs the app.
 
+> Na srpskom: [README.sr.md](README.sr.md)
+
 ## Stack
 
 | Layer | Technology | Why |
