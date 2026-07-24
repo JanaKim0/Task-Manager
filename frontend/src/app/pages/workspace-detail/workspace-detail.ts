@@ -7,6 +7,8 @@ import { ProjectService } from '../../core/project.service';
 import { Project, Workspace } from '../../core/models';
 import { readHttpError } from '../../core/http-error';
 import { ConfirmService } from '../../core/confirm.service';
+import { SettingsService } from '../../core/settings.service';
+import { fill } from '../../core/i18n';
 
 @Component({
   selector: 'app-workspace-detail',
@@ -23,6 +25,9 @@ export class WorkspaceDetailComponent implements OnInit {
   private readonly projectsApi = inject(ProjectService);
   private readonly fb = inject(FormBuilder);
   private readonly confirm = inject(ConfirmService);
+  private readonly settings = inject(SettingsService);
+
+  readonly t = this.settings.t;
 
   readonly workspace = signal<Workspace | null>(null);
   readonly projects = signal<Project[]>([]);
@@ -62,7 +67,7 @@ export class WorkspaceDetailComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err: HttpErrorResponse) => {
-        this.error.set(readHttpError(err));
+        this.error.set(readHttpError(err, this.settings.language()));
         this.loading.set(false);
       },
     });
@@ -133,17 +138,19 @@ export class WorkspaceDetailComponent implements OnInit {
         this.saving.set(false);
       },
       error: (err: HttpErrorResponse) => {
-        this.error.set(readHttpError(err));
+        this.error.set(readHttpError(err, this.settings.language()));
         this.saving.set(false);
       },
     });
   }
 
   async remove(project: Project): Promise<void> {
+    const text = this.t().projects;
     const ok = await this.confirm.ask({
-      title: `Delete "${project.name}"?`,
-      message: 'Its board, columns and cards will be deleted too.',
-      confirmLabel: 'Delete project',
+      title: fill(text.deleteTitle, { name: project.name }),
+      message: text.deleteMessage,
+      confirmLabel: text.deleteConfirm,
+      cancelLabel: this.t().common.cancel,
     });
     if (!ok) {
       return;
@@ -152,7 +159,7 @@ export class WorkspaceDetailComponent implements OnInit {
     this.projectsApi.remove(project.id).subscribe({
       next: () =>
         this.projects.update((list) => list.filter((p) => p.id !== project.id)),
-      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err)),
+      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err, this.settings.language())),
     });
   }
 

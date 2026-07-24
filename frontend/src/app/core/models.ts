@@ -9,13 +9,6 @@ export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
 export const PRIORITIES: Priority[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 
-export const PRIORITY_LABELS: Record<Priority, string> = {
-  LOW: 'Low',
-  MEDIUM: 'Medium',
-  HIGH: 'High',
-  URGENT: 'Urgent',
-};
-
 export interface Workspace {
   id: string;
   name: string;

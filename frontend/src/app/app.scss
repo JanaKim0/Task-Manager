@@ -43,14 +43,113 @@
   color: var(--accent);
 }
 
+/* Language and theme switches sit at the far right. */
+.topbar__settings {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.switch {
+  display: flex;
+  padding: 2px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.switch__option {
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  height: 24px;
+  padding: 0 0.4rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+
+.switch__option:hover {
+  color: var(--text);
+}
+
+.switch__option--active {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: var(--shadow);
+}
+
+.switch__dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1px solid rgb(0 0 0 / 12%);
+}
+
+/* Fixed colours: these swatches show what each theme looks like, so they
+   must not follow the theme currently in use. */
+.switch__dot--pink {
+  background: #e8749c;
+}
+
+.switch__dot--gray {
+  background: #64748b;
+}
+
 .page {
   max-width: 1120px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
+  padding: 2rem 1.5rem 3rem;
 }
 
 /* The board needs the full window width, so it opts out of the centred layout. */
 .page--wide {
   max-width: none;
   padding: 1.5rem 1.5rem 2rem;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem 1rem;
+  padding: 1.1rem 1.5rem 1.6rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.footer strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.footer a {
+  color: var(--text-muted);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.footer a:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .topbar {
+    gap: 1rem;
+    padding: 0 0.9rem;
+  }
+
+  .topbar__nav {
+    display: none;
+  }
 }

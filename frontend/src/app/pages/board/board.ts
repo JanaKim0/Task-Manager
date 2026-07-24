@@ -22,10 +22,11 @@ import {
   Note,
   Priority,
   PRIORITIES,
-  PRIORITY_LABELS,
 } from '../../core/models';
 import { readHttpError } from '../../core/http-error';
 import { ConfirmService } from '../../core/confirm.service';
+import { SettingsService } from '../../core/settings.service';
+import { fill } from '../../core/i18n';
 
 /** How a deadline should be shown to the user. */
 type DueState = 'overdue' | 'today' | 'soon' | 'later' | 'none';
@@ -48,6 +49,9 @@ export class BoardComponent implements OnInit {
   private readonly api = inject(BoardService);
   private readonly fb = inject(FormBuilder);
   private readonly confirm = inject(ConfirmService);
+  private readonly settings = inject(SettingsService);
+
+  readonly t = this.settings.t;
 
   readonly board = signal<Board | null>(null);
   readonly loading = signal(true);
@@ -76,13 +80,32 @@ export class BoardComponent implements OnInit {
   readonly filters = signal<BoardFilters>({ ...EMPTY_FILTERS });
 
   readonly priorities = PRIORITIES;
-  readonly priorityLabels = PRIORITY_LABELS;
-  readonly dueFilters: { value: DueFilter; label: string }[] = [
-    { value: 'any', label: 'Any date' },
-    { value: 'overdue', label: 'Overdue' },
-    { value: 'week', label: 'Next 7 days' },
-    { value: 'none', label: 'No deadline' },
-  ];
+  readonly dueFilterValues: DueFilter[] = ['any', 'overdue', 'week', 'none'];
+
+  /** Priority names in the current language. */
+  priorityLabel(priority: Priority): string {
+    return this.t().priority[priority];
+  }
+
+  dueFilterLabel(value: DueFilter): string {
+    return this.t().filters.due[value];
+  }
+
+  /** "3 of 8 done" / "Сделано 3 из 8". */
+  readonly progressLabel = computed(() =>
+    fill(this.t().board.progress, {
+      done: this.doneCards(),
+      total: this.totalCards(),
+    }),
+  );
+
+  readonly shownLabel = computed(() =>
+    fill(this.t().board.shown, { count: this.visibleCards() }),
+  );
+
+  markDoneLabel(card: Card): string {
+    return fill(this.t().card.markAsDone, { title: card.title });
+  }
 
   readonly columns = computed(() => this.board()?.columns ?? []);
 
@@ -170,7 +193,7 @@ export class BoardComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err: HttpErrorResponse) => {
-        this.error.set(readHttpError(err));
+        this.error.set(readHttpError(err, this.settings.language()));
         this.loading.set(false);
       },
     });
@@ -262,17 +285,19 @@ export class BoardComponent implements OnInit {
         this.showColumnForm.set(false);
         this.newColumnName.set('');
       },
-      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err)),
+      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err, this.settings.language())),
     });
   }
 
   async removeColumn(column: BoardColumn): Promise<void> {
+    const text = this.t().board;
     const ok = await this.confirm.ask({
-      title: `Delete "${column.name}"?`,
+      title: fill(text.columnDeleteTitle, { name: column.name }),
       message: column.cards.length
-        ? `${column.cards.length} card(s) inside will be deleted too. This cannot be undone.`
-        : 'This cannot be undone.',
-      confirmLabel: 'Delete column',
+        ? fill(text.columnDeleteWithCards, { count: column.cards.length })
+        : text.columnDeleteEmpty,
+      confirmLabel: text.deleteColumn,
+      cancelLabel: this.t().common.cancel,
     });
     if (!ok) {
       return;
@@ -284,7 +309,7 @@ export class BoardComponent implements OnInit {
           ...board,
           columns: (board.columns ?? []).filter((c) => c.id !== column.id),
         })),
-      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err)),
+      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err, this.settings.language())),
     });
   }
 
@@ -341,7 +366,7 @@ export class BoardComponent implements OnInit {
         next: () => this.error.set(null),
         error: (err: HttpErrorResponse) => {
           this.setColumns(snapshot);
-          this.error.set(readHttpError(err));
+          this.error.set(readHttpError(err, this.settings.language()));
         },
       });
   }
@@ -366,7 +391,7 @@ export class BoardComponent implements OnInit {
         next: () => this.error.set(null),
         error: (err: HttpErrorResponse) => {
           this.setColumns(snapshot);
-          this.error.set(readHttpError(err));
+          this.error.set(readHttpError(err, this.settings.language()));
         },
       });
   }
@@ -402,7 +427,7 @@ export class BoardComponent implements OnInit {
         }));
         this.newCardTitle.set('');
       },
-      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err)),
+      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err, this.settings.language())),
     });
   }
 
@@ -430,7 +455,7 @@ export class BoardComponent implements OnInit {
         this.editorLoading.set(false);
       },
       error: (err: HttpErrorResponse) => {
-        this.error.set(readHttpError(err));
+        this.error.set(readHttpError(err, this.settings.language()));
         this.editorLoading.set(false);
       },
     });
@@ -470,7 +495,7 @@ export class BoardComponent implements OnInit {
           this.closeEditor();
         },
         error: (err: HttpErrorResponse) => {
-          this.error.set(readHttpError(err));
+          this.error.set(readHttpError(err, this.settings.language()));
           this.saving.set(false);
         },
       });
@@ -490,16 +515,18 @@ export class BoardComponent implements OnInit {
         this.replaceCard({ ...updated, checklist: card.checklist }),
       error: (err: HttpErrorResponse) => {
         this.replaceCard(card);
-        this.error.set(readHttpError(err));
+        this.error.set(readHttpError(err, this.settings.language()));
       },
     });
   }
 
   async removeCard(card: Card): Promise<void> {
+    const text = this.t().card;
     const ok = await this.confirm.ask({
-      title: `Delete "${card.title}"?`,
-      message: 'The card, its notes and its checklist will be removed.',
-      confirmLabel: 'Delete card',
+      title: fill(text.deleteTitle, { title: card.title }),
+      message: text.deleteMessage,
+      confirmLabel: text.deleteConfirm,
+      cancelLabel: this.t().common.cancel,
     });
     if (!ok) {
       return;
@@ -511,7 +538,7 @@ export class BoardComponent implements OnInit {
           ...column,
           cards: column.cards.filter((c) => c.id !== card.id),
         })),
-      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err)),
+      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err, this.settings.language())),
     });
   }
 
@@ -531,7 +558,7 @@ export class BoardComponent implements OnInit {
         this.newNote.set('');
         this.bumpNoteCount(card.id, 1);
       },
-      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err)),
+      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err, this.settings.language())),
     });
   }
 
@@ -541,7 +568,7 @@ export class BoardComponent implements OnInit {
         this.notes.update((list) => list.filter((n) => n.id !== note.id));
         this.bumpNoteCount(note.cardId, -1);
       },
-      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err)),
+      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err, this.settings.language())),
     });
   }
 
@@ -561,7 +588,7 @@ export class BoardComponent implements OnInit {
         this.syncChecklist(card.id, next);
         this.newChecklistItem.set('');
       },
-      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err)),
+      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err, this.settings.language())),
     });
   }
 
@@ -578,7 +605,7 @@ export class BoardComponent implements OnInit {
           this.syncChecklist(card.id, next);
         }
       },
-      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err)),
+      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err, this.settings.language())),
     });
   }
 
@@ -593,7 +620,7 @@ export class BoardComponent implements OnInit {
           this.syncChecklist(card.id, next);
         }
       },
-      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err)),
+      error: (err: HttpErrorResponse) => this.error.set(readHttpError(err, this.settings.language())),
     });
   }
 
@@ -635,25 +662,29 @@ export class BoardComponent implements OnInit {
       return '';
     }
 
+    const text = this.t().due;
     const diff = this.daysUntil(card.dueDate);
-    if (diff === 0) return 'Today';
-    if (diff === 1) return 'Tomorrow';
-    if (diff === -1) return '1 day late';
-    if (diff < -1) return `${Math.abs(diff)} days late`;
+    if (diff === 0) return text.today;
+    if (diff === 1) return text.tomorrow;
+    if (diff === -1) return text.oneDayLate;
+    if (diff < -1) return fill(text.daysLate, { count: Math.abs(diff) });
 
-    return new Date(card.dueDate).toLocaleDateString('en-GB', {
+    return new Date(card.dueDate).toLocaleDateString(this.settings.dateLocale(), {
       day: 'numeric',
       month: 'short',
     });
   }
 
   noteDate(note: Note): string {
-    return new Date(note.createdAt).toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    return new Date(note.createdAt).toLocaleDateString(
+      this.settings.dateLocale(),
+      {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+      },
+    );
   }
 
   /** Whole days between today and the deadline, ignoring the time of day. */

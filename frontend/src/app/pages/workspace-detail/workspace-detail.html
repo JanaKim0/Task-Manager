@@ -1,7 +1,7 @@
-<a class="back muted" routerLink="/workspaces">← all workspaces</a>
+<a class="back muted" routerLink="/workspaces">{{ t().workspaces.backToAll }}</a>
 
 @if (loading()) {
-  <p class="muted">Loading...</p>
+  <p class="muted">{{ t().common.loading }}</p>
 } @else if (error() && !workspace()) {
   <p class="error-text">{{ error() }}</p>
 } @else if (workspace(); as ws) {
@@ -14,10 +14,12 @@
       }
     </div>
     @if (formOpen()) {
-      <button class="btn" type="button" (click)="closeForm()">Cancel</button>
+      <button class="btn" type="button" (click)="closeForm()">
+        {{ t().common.cancel }}
+      </button>
     } @else {
       <button class="btn btn--primary" type="button" (click)="openCreate()">
-        + New project
+        {{ t().projects.newButton }}
       </button>
     }
   </section>
@@ -29,15 +31,19 @@
   @if (formOpen()) {
     <form class="card form" [formGroup]="form" (ngSubmit)="submit()">
       <div class="field">
-        <label for="pname">Project name</label>
-        <input id="pname" formControlName="name" placeholder="Portfolio" />
+        <label for="pname">{{ t().projects.nameLabel }}</label>
+        <input
+          id="pname"
+          formControlName="name"
+          [placeholder]="t().projects.namePlaceholder"
+        />
         @if (form.controls.name.touched && form.controls.name.invalid) {
-          <span class="error-text">At least 2 characters</span>
+          <span class="error-text">{{ t().workspaces.nameError }}</span>
         }
       </div>
 
       <div class="field">
-        <label>Colour</label>
+        <label>{{ t().projects.colourLabel }}</label>
         <div class="palette">
           @for (color of palette; track color) {
             <button
@@ -45,7 +51,7 @@
               class="palette__dot"
               [class.palette__dot--active]="form.controls.color.value === color"
               [style.background]="color"
-              [attr.aria-label]="'Colour ' + color"
+              [attr.aria-label]="t().projects.colourLabel + ' ' + color"
               (click)="pickColor(color)"
             ></button>
           }
@@ -53,29 +59,35 @@
       </div>
 
       <div class="field form__wide">
-        <label for="pdesc">Description</label>
+        <label for="pdesc">{{ t().common.description }}</label>
         <textarea
           id="pdesc"
           formControlName="description"
           rows="2"
-          placeholder="Optional"
+          [placeholder]="t().common.optional"
         ></textarea>
       </div>
 
       <div class="form__actions">
         <button class="btn btn--primary" type="submit" [disabled]="saving()">
-          {{ saving() ? 'Saving...' : editingId() ? 'Save changes' : 'Create project' }}
+          @if (saving()) {
+            {{ t().common.saving }}
+          } @else if (editingId()) {
+            {{ t().projects.saveButton }}
+          } @else {
+            {{ t().projects.createButton }}
+          }
         </button>
       </div>
     </form>
   }
 
-  <h3 class="section-title">Projects</h3>
+  <h3 class="section-title">{{ t().projects.sectionTitle }}</h3>
 
   @if (projects().length === 0) {
     <div class="card empty">
-      <p>No projects in this workspace yet.</p>
-      <p class="muted">Create one — it comes with a ready-made board.</p>
+      <p>{{ t().projects.emptyTitle }}</p>
+      <p class="muted">{{ t().projects.emptyHint }}</p>
     </div>
   } @else {
     <ul class="grid">
@@ -91,10 +103,10 @@
           <div class="project__footer">
             @if (firstBoardId(project); as boardId) {
               <a class="btn btn--sm" [routerLink]="['/boards', boardId]">
-                Open board
+                {{ t().projects.openBoard }}
               </a>
             } @else {
-              <span class="muted">No board</span>
+              <span class="muted">{{ t().projects.noBoard }}</span>
             }
             <span class="project__actions">
               <button
@@ -102,14 +114,14 @@
                 type="button"
                 (click)="openEdit(project)"
               >
-                Edit
+                {{ t().common.edit }}
               </button>
               <button
                 class="btn btn--danger btn--sm"
                 type="button"
                 (click)="remove(project)"
               >
-                Delete
+                {{ t().common.delete }}
               </button>
             </span>
           </div>

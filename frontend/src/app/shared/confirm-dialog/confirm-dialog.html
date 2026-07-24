@@ -12,7 +12,9 @@
     <p class="confirm__message">{{ req.message }}</p>
 
     <div class="confirm__actions">
-      <button class="btn" type="button" (click)="answer(false)">Cancel</button>
+      <button class="btn" type="button" (click)="answer(false)">
+        {{ req.cancelLabel }}
+      </button>
       <button
         class="btn"
         [class.btn--danger]="req.danger"

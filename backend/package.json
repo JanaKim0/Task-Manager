@@ -1,10 +1,14 @@
 {
-  "name": "backend",
-  "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "name": "task-manager-backend",
+  "version": "1.0.0",
+  "description": "Task Manager — REST API for a Trello-style personal task board",
+  "author": "Jana Kim",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JanaKim0/Task-Manager.git"
+  },
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",

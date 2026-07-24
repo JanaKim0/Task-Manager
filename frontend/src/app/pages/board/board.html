@@ -26,14 +26,14 @@
       }
       <h1>{{ boardData.name }}</h1>
       <p class="muted">
-        {{ doneCards() }} of {{ totalCards() }} done
+        {{ progressLabel() }}
         @if (filtersActive()) {
-          · {{ visibleCards() }} shown
+          · {{ shownLabel() }}
         }
       </p>
     </div>
     <button class="btn" type="button" (click)="openColumnForm()">
-      + Add column
+      {{ t().board.addColumn }}
     </button>
   </section>
 
@@ -42,30 +42,30 @@
     <input
       class="filters__search"
       type="search"
-      placeholder="Search cards..."
+      [placeholder]="t().filters.searchPlaceholder"
       [value]="filters().search"
       (input)="setSearch($any($event.target).value)"
-      aria-label="Search cards"
+      [attr.aria-label]="t().filters.searchLabel"
     />
 
     <select
       [value]="filters().priority"
       (change)="setPriority($any($event.target).value)"
-      aria-label="Filter by priority"
+      [attr.aria-label]="t().filters.priorityLabel"
     >
-      <option value="any">Any priority</option>
+      <option value="any">{{ t().filters.anyPriority }}</option>
       @for (priority of priorities; track priority) {
-        <option [value]="priority">{{ priorityLabels[priority] }}</option>
+        <option [value]="priority">{{ priorityLabel(priority) }}</option>
       }
     </select>
 
     <select
       [value]="filters().due"
       (change)="setDue($any($event.target).value)"
-      aria-label="Filter by deadline"
+      [attr.aria-label]="t().filters.deadlineLabel"
     >
-      @for (option of dueFilters; track option.value) {
-        <option [value]="option.value">{{ option.label }}</option>
+      @for (option of dueFilterValues; track option) {
+        <option [value]="option">{{ dueFilterLabel(option) }}</option>
       }
     </select>
 
@@ -75,12 +75,12 @@
         [checked]="filters().hideDone"
         (change)="toggleHideDone()"
       />
-      Hide done
+      {{ t().filters.hideDone }}
     </label>
 
     @if (filtersActive()) {
       <button class="btn btn--ghost btn--sm" type="button" (click)="resetFilters()">
-        Reset
+        {{ t().common.reset }}
       </button>
     }
   </section>
@@ -91,7 +91,7 @@
       <button
         class="btn btn--ghost btn--sm"
         type="button"
-        title="Dismiss"
+        [title]="t().common.dismiss"
         (click)="dismissError()"
       >
         ✕
@@ -101,18 +101,15 @@
 
   @if (filtersActive() && visibleCards() === 0) {
     <div class="card empty">
-      <p>No cards match these filters.</p>
+      <p>{{ t().filters.noMatches }}</p>
       <button class="btn btn--sm" type="button" (click)="resetFilters()">
-        Reset filters
+        {{ t().filters.resetFilters }}
       </button>
     </div>
   }
 
   @if (!dragEnabled()) {
-    <p class="drag-hint muted">
-      Dragging is paused while a filter is on — reset the filters to rearrange
-      cards.
-    </p>
+    <p class="drag-hint muted">{{ t().board.dragPaused }}</p>
   }
 
   <div
@@ -128,7 +125,11 @@
         <header class="column__head">
           <h2 class="column__title">
             @if (dragEnabled()) {
-              <span class="column__grip" cdkDragHandle title="Drag the column">
+              <span
+                class="column__grip"
+                cdkDragHandle
+                [title]="t().board.dragColumn"
+              >
                 ⠿
               </span>
             }
@@ -138,7 +139,7 @@
           <button
             class="btn btn--ghost btn--sm"
             type="button"
-            title="Delete column"
+            [title]="t().board.deleteColumn"
             (click)="removeColumn(column)"
           >
             ✕
@@ -166,7 +167,7 @@
                   type="checkbox"
                   [checked]="card.done"
                   (change)="toggleDone(card)"
-                  [attr.aria-label]="'Mark ' + card.title + ' as done'"
+                  [attr.aria-label]="markDoneLabel(card)"
                 />
               </label>
 
@@ -185,19 +186,21 @@
                     </span>
                   }
                   <span class="prio" [class]="'prio--' + card.priority.toLowerCase()">
-                    {{ priorityLabels[card.priority] }}
+                    {{ priorityLabel(card.priority) }}
                   </span>
                   @if (checklistProgress(card); as progress) {
                     <span
                       class="chip"
                       [class.chip--complete]="checklistComplete(card)"
-                      title="Checklist"
+                      [title]="t().card.checklistTooltip"
                     >
                       ☑ {{ progress }}
                     </span>
                   }
                   @if (card._count?.notes) {
-                    <span class="chip" title="Notes">✎ {{ card._count?.notes }}</span>
+                    <span class="chip" [title]="t().card.notesTooltip">
+                      ✎ {{ card._count?.notes }}
+                    </span>
                   }
                 </div>
               </div>
@@ -206,7 +209,7 @@
                 <button
                   class="btn btn--ghost btn--sm"
                   type="button"
-                  title="Edit"
+                  [title]="t().common.edit"
                   (click)="openEditor(card)"
                 >
                   ✎
@@ -214,7 +217,7 @@
                 <button
                   class="btn btn--ghost btn--sm"
                   type="button"
-                  title="Delete"
+                  [title]="t().common.delete"
                   (click)="removeCard(card)"
                 >
                   🗑
@@ -228,7 +231,7 @@
           <div class="add-card">
             <input
               class="add-card__input"
-              placeholder="Card title"
+              [placeholder]="t().board.cardTitlePlaceholder"
               [value]="newCardTitle()"
               (input)="newCardTitle.set($any($event.target).value)"
               (keydown.enter)="addCard(column.id)"
@@ -241,14 +244,14 @@
                 type="button"
                 (click)="addCard(column.id)"
               >
-                Add
+                {{ t().common.add }}
               </button>
               <button
                 class="btn btn--ghost btn--sm"
                 type="button"
                 (click)="cancelAddCard()"
               >
-                Cancel
+                {{ t().common.cancel }}
               </button>
             </div>
           </div>
@@ -258,7 +261,7 @@
             type="button"
             (click)="startAddCard(column.id)"
           >
-            + Add a card
+            {{ t().board.addCard }}
           </button>
         }
       </section>
@@ -268,7 +271,7 @@
       <section class="column column--new">
         <input
           class="add-card__input"
-          placeholder="Column name"
+          [placeholder]="t().board.columnNamePlaceholder"
           [value]="newColumnName()"
           (input)="newColumnName.set($any($event.target).value)"
           (keydown.enter)="addColumn()"
@@ -277,14 +280,14 @@
         />
         <div class="add-card__actions">
           <button class="btn btn--primary btn--sm" type="button" (click)="addColumn()">
-            Add column
+            {{ t().board.addColumnButton }}
           </button>
           <button
             class="btn btn--ghost btn--sm"
             type="button"
             (click)="showColumnForm.set(false)"
           >
-            Cancel
+            {{ t().common.cancel }}
           </button>
         </div>
       </section>
@@ -296,9 +299,9 @@
 @if (editingCard(); as card) {
   <div class="backdrop" (click)="closeEditor()"></div>
 
-  <div class="dialog card" role="dialog" aria-label="Edit card">
+  <div class="dialog card" role="dialog" [attr.aria-label]="t().card.editTitle">
     <header class="dialog__head">
-      <h2>Edit card</h2>
+      <h2>{{ t().card.editTitle }}</h2>
       <button class="btn btn--ghost btn--sm" type="button" (click)="closeEditor()">
         ✕
       </button>
@@ -306,21 +309,21 @@
 
     <form [formGroup]="cardForm" (ngSubmit)="saveCard()">
       <div class="field">
-        <label for="title">Title</label>
+        <label for="title">{{ t().card.titleLabel }}</label>
         <input id="title" formControlName="title" />
         @if (cardForm.controls.title.touched && cardForm.controls.title.invalid) {
-          <span class="error-text">The title cannot be empty</span>
+          <span class="error-text">{{ t().card.titleError }}</span>
         }
       </div>
 
       <div class="field">
-        <label for="desc">Description</label>
+        <label for="desc">{{ t().common.description }}</label>
         <textarea id="desc" formControlName="description" rows="3"></textarea>
       </div>
 
       <div class="dialog__row">
         <div class="field">
-          <label for="due">Deadline (optional)</label>
+          <label for="due">{{ t().card.deadlineLabel }}</label>
           <div class="due-input">
             <input id="due" type="date" formControlName="dueDate" />
             @if (cardForm.controls.dueDate.value) {
@@ -329,17 +332,17 @@
                 type="button"
                 (click)="clearDueDate()"
               >
-                Clear
+                {{ t().card.clearDeadline }}
               </button>
             }
           </div>
         </div>
 
         <div class="field">
-          <label for="prio">Priority</label>
+          <label for="prio">{{ t().card.priorityLabel }}</label>
           <select id="prio" formControlName="priority">
             @for (priority of priorities; track priority) {
-              <option [value]="priority">{{ priorityLabels[priority] }}</option>
+              <option [value]="priority">{{ priorityLabel(priority) }}</option>
             }
           </select>
         </div>
@@ -347,12 +350,14 @@
 
       <footer class="dialog__foot">
         <span class="muted">
-          {{ card.done ? 'Marked as done' : 'Not done yet' }}
+          {{ card.done ? t().card.markedDone : t().card.notDone }}
         </span>
         <span class="dialog__buttons">
-          <button class="btn" type="button" (click)="closeEditor()">Cancel</button>
+          <button class="btn" type="button" (click)="closeEditor()">
+            {{ t().common.cancel }}
+          </button>
           <button class="btn btn--primary" type="submit" [disabled]="saving()">
-            {{ saving() ? 'Saving...' : 'Save' }}
+            {{ saving() ? t().common.saving : t().common.save }}
           </button>
         </span>
       </footer>
@@ -361,14 +366,14 @@
     <!-- Checklist -->
     <section class="sub">
       <h3 class="sub__title">
-        Checklist
+        {{ t().card.checklist }}
         @if (editorProgress(); as progress) {
           <span class="muted">{{ progress }}</span>
         }
       </h3>
 
       @if (checklist().length === 0 && !editorLoading()) {
-        <p class="muted sub__empty">Break the task into steps.</p>
+        <p class="muted sub__empty">{{ t().card.checklistEmpty }}</p>
       }
 
       <ul class="checklist">
@@ -384,7 +389,7 @@
             <button
               class="btn btn--ghost btn--sm"
               type="button"
-              title="Delete"
+              [title]="t().common.delete"
               (click)="removeChecklistItem(item)"
             >
               ✕
@@ -395,7 +400,7 @@
 
       <div class="sub__add">
         <input
-          placeholder="Add a step..."
+          [placeholder]="t().card.checklistPlaceholder"
           [value]="newChecklistItem()"
           (input)="newChecklistItem.set($any($event.target).value)"
           (keydown.enter)="addChecklistItem()"
@@ -406,19 +411,19 @@
           [disabled]="!newChecklistItem().trim()"
           (click)="addChecklistItem()"
         >
-          Add
+          {{ t().common.add }}
         </button>
       </div>
     </section>
 
     <!-- Notes -->
     <section class="sub">
-      <h3 class="sub__title">Notes</h3>
+      <h3 class="sub__title">{{ t().card.notes }}</h3>
 
       <div class="sub__add">
         <textarea
           rows="2"
-          placeholder="What happened, what to remember..."
+          [placeholder]="t().card.notePlaceholder"
           [value]="newNote()"
           (input)="newNote.set($any($event.target).value)"
         ></textarea>
@@ -428,14 +433,14 @@
           [disabled]="!newNote().trim()"
           (click)="addNote()"
         >
-          Add
+          {{ t().common.add }}
         </button>
       </div>
 
       @if (editorLoading()) {
-        <p class="muted sub__empty">Loading notes...</p>
+        <p class="muted sub__empty">{{ t().card.notesLoading }}</p>
       } @else if (notes().length === 0) {
-        <p class="muted sub__empty">No notes yet.</p>
+        <p class="muted sub__empty">{{ t().card.notesEmpty }}</p>
       } @else {
         <ul class="notes">
           @for (note of notes(); track note.id) {
@@ -447,7 +452,7 @@
               <button
                 class="btn btn--ghost btn--sm"
                 type="button"
-                title="Delete"
+                [title]="t().common.delete"
                 (click)="removeNote(note)"
               >
                 ✕
