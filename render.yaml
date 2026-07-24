@@ -1,0 +1,36 @@
+# Render reads this file when the repository is connected as a Blueprint,
+# so the API and its database can be created without filling in a form.
+#
+# CORS_ORIGIN is left blank on purpose: it has to be the address Vercel
+# hands out, which is only known after the frontend is deployed. Set it in
+# the Render dashboard afterwards.
+
+services:
+  - type: web
+    name: task-manager-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    # use-postgres.js rewrites the datasource, because the repository itself
+    # stays on SQLite for the desktop app and for local development.
+    buildCommand: npm ci && node scripts/use-postgres.js && npx prisma generate && npm run build
+    # `db push` rather than `migrate deploy`: the migration history in the
+    # repository is SQLite SQL, which PostgreSQL cannot run. The deployed
+    # site is a demo, so building the schema straight from schema.prisma is
+    # both simpler and enough.
+    startCommand: npx prisma db push --skip-generate && npm run start:prod
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: task-manager-db
+          property: connectionString
+      - key: CORS_ORIGIN
+        sync: false
+      - key: NODE_VERSION
+        value: 22
+
+databases:
+  - name: task-manager-db
+    plan: free
+    databaseName: taskmanager

@@ -119,11 +119,24 @@ tooling, and that the same code can ship as a website and as a program.
 
 ## Stage 7 — Release
 
-- [ ] Deploy the web version — see [DEPLOYMENT.md](DEPLOYMENT.md).
-      Do it on a branch: the switch to PostgreSQL would break the desktop
-      build, which stays on SQLite.
-- [ ] README in Serbian describing the features and the tools used
-- [ ] Make the repository public
+- [x] README in Serbian: features, how to run it, where the installer is,
+      how the app works and what it is built with
+- [x] Repository made public
+- [x] Deployment prepared: `render.yaml`, `frontend/vercel.json` and
+      `backend/scripts/use-postgres.js`
+- [ ] Actually deploy — needs accounts, see [DEPLOYMENT.md](DEPLOYMENT.md)
+
+### How the two databases coexist
+
+The repository stays on SQLite because the desktop app and local development
+need it. Prisma refuses `provider = env("...")`, so `use-postgres.js` rewrites
+that one line during the build **on Render only** — nothing in the repository
+changes, and no branch has to be kept in sync.
+
+The hosted copy builds its schema with `prisma db push` rather than
+`migrate deploy`: the migration files hold SQLite SQL that PostgreSQL cannot
+run. That is acceptable because the deployed site is a demo. Real data lives
+in the desktop app, which keeps proper migrations.
 
 ---
 
