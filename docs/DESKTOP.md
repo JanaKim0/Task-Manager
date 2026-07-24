@@ -2,6 +2,10 @@
 
 A double-clickable Windows app instead of two terminals and a localhost URL.
 
+Ready-made installer:
+[releases page](https://github.com/JanaKim0/Task-Manager/releases/latest).
+Building one yourself is covered at the bottom of this page.
+
 Inside it is the same code: the Electron window shows the Angular interface,
 and the NestJS API runs in the same process rather than in a second terminal.
 

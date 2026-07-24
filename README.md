@@ -6,7 +6,11 @@ projects, projects hold boards, boards hold columns, and columns hold cards.
 Single user by design — no accounts, no logins, no assignees. It is a personal
 planner, so everything on screen belongs to whoever runs the app.
 
-> Na srpskom: [README.sr.md](README.sr.md)
+### [⬇ Download for Windows](https://github.com/JanaKim0/Task-Manager/releases/latest)
+
+An installer, no terminal needed. Windows will warn that the app is not
+digitally signed — click **More info → Run anyway**. Your tasks are kept in
+`%APPDATA%\Task Manager\`, with a backup on every launch.
 
 ## Stack
 
@@ -63,15 +67,18 @@ cd frontend && npm install && npm start
 
 Then open http://localhost:4200
 
-### As a desktop app
+### Building the desktop app yourself
+
+A ready-made installer is on the
+[releases page](https://github.com/JanaKim0/Task-Manager/releases/latest).
+To build one from source instead:
 
 ```bash
 cd desktop && npm install && npm run dist
 ```
 
-produces `desktop/release/Task Manager Setup 1.0.0.exe`. The installed app
-needs no terminals, and keeps its data in `%APPDATA%\Task Manager\` with a
-backup on every launch — see [docs/DESKTOP.md](docs/DESKTOP.md).
+produces `desktop/release/Task Manager Setup 1.0.0.exe` — see
+[docs/DESKTOP.md](docs/DESKTOP.md).
 
 Useful extras:
 
