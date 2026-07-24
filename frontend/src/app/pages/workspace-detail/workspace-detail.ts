@@ -6,6 +6,7 @@ import { WorkspaceService } from '../../core/workspace.service';
 import { ProjectService } from '../../core/project.service';
 import { Project, Workspace } from '../../core/models';
 import { readHttpError } from '../../core/http-error';
+import { ConfirmService } from '../../core/confirm.service';
 
 @Component({
   selector: 'app-workspace-detail',
@@ -21,6 +22,7 @@ export class WorkspaceDetailComponent implements OnInit {
   private readonly workspacesApi = inject(WorkspaceService);
   private readonly projectsApi = inject(ProjectService);
   private readonly fb = inject(FormBuilder);
+  private readonly confirm = inject(ConfirmService);
 
   readonly workspace = signal<Workspace | null>(null);
   readonly projects = signal<Project[]>([]);
@@ -137,8 +139,13 @@ export class WorkspaceDetailComponent implements OnInit {
     });
   }
 
-  remove(project: Project): void {
-    if (!confirm(`Delete project "${project.name}" and all its boards?`)) {
+  async remove(project: Project): Promise<void> {
+    const ok = await this.confirm.ask({
+      title: `Delete "${project.name}"?`,
+      message: 'Its board, columns and cards will be deleted too.',
+      confirmLabel: 'Delete project',
+    });
+    if (!ok) {
       return;
     }
 

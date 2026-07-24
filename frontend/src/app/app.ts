@@ -1,10 +1,11 @@
 import { Component, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
+import { ConfirmDialogComponent } from './shared/confirm-dialog/confirm-dialog';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink],
+  imports: [RouterOutlet, RouterLink, ConfirmDialogComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })

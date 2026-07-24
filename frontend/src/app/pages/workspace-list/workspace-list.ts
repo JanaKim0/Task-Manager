@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { WorkspaceService } from '../../core/workspace.service';
 import { Workspace } from '../../core/models';
 import { readHttpError } from '../../core/http-error';
+import { ConfirmService } from '../../core/confirm.service';
 
 @Component({
   selector: 'app-workspace-list',
@@ -15,6 +16,7 @@ import { readHttpError } from '../../core/http-error';
 export class WorkspaceListComponent implements OnInit {
   private readonly api = inject(WorkspaceService);
   private readonly fb = inject(FormBuilder);
+  private readonly confirm = inject(ConfirmService);
 
   // A signal is a reactive box: call .set() and the template redraws itself.
   readonly workspaces = signal<Workspace[]>([]);
@@ -95,10 +97,13 @@ export class WorkspaceListComponent implements OnInit {
       });
   }
 
-  remove(workspace: Workspace): void {
-    const ok = confirm(
-      `Delete "${workspace.name}"? All its projects and boards go with it.`,
-    );
+  async remove(workspace: Workspace): Promise<void> {
+    const ok = await this.confirm.ask({
+      title: `Delete "${workspace.name}"?`,
+      message:
+        'Every project, board and card inside it will be deleted too. This cannot be undone.',
+      confirmLabel: 'Delete workspace',
+    });
     if (!ok) {
       return;
     }
