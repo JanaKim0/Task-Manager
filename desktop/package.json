@@ -1,0 +1,63 @@
+{
+  "name": "task-manager-desktop",
+  "productName": "Task Manager",
+  "version": "1.0.0",
+  "description": "Task Manager — a personal task board",
+  "author": "Jana Kim",
+  "license": "MIT",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build:parts": "npm run icon && npm run build --prefix ../backend && npm run build:desktop --prefix ../frontend",
+    "icon": "node scripts/make-icon.js",
+    "stage": "node scripts/stage.js",
+    "pack": "npm run build:parts && npm run stage && electron-builder --dir",
+    "dist": "npm run build:parts && npm run stage && electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "dev.janakim.taskmanager",
+    "productName": "Task Manager",
+    "copyright": "Copyright (c) 2026 Jana Kim",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "lib/**/*",
+      "build/icon.png",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "app-content",
+        "to": "app-content"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.png",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Task Manager",
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}
