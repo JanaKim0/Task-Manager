@@ -11,3 +11,8 @@
 <main class="page" [class.page--wide]="wideLayout()">
   <router-outlet />
 </main>
+
+<!-- Rendered once here so any page can ask for a confirmation. -->
+<app-confirm-dialog />
+
+

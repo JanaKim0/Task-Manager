@@ -1,0 +1,34 @@
+.confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(61 43 51 / 40%);
+  z-index: 90;
+}
+
+.confirm {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, calc(100vw - 2rem));
+  padding: 1.4rem;
+  z-index: 100;
+  box-shadow: var(--shadow-lg);
+}
+
+.confirm__title {
+  font-size: 1.05rem;
+  margin-bottom: 0.5rem;
+}
+
+.confirm__message {
+  margin: 0 0 1.2rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.confirm__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

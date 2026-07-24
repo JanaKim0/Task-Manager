@@ -1,0 +1,28 @@
+@if (request(); as req) {
+  <div class="confirm-backdrop" (click)="answer(false)"></div>
+
+  <div
+    class="confirm card"
+    role="alertdialog"
+    aria-modal="true"
+    [attr.aria-label]="req.title"
+    (keydown.escape)="answer(false)"
+  >
+    <h2 class="confirm__title">{{ req.title }}</h2>
+    <p class="confirm__message">{{ req.message }}</p>
+
+    <div class="confirm__actions">
+      <button class="btn" type="button" (click)="answer(false)">Cancel</button>
+      <button
+        class="btn"
+        [class.btn--danger]="req.danger"
+        [class.btn--primary]="!req.danger"
+        type="button"
+        autofocus
+        (click)="answer(true)"
+      >
+        {{ req.confirmLabel }}
+      </button>
+    </div>
+  </div>
+}
