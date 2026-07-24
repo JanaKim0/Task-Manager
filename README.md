@@ -27,6 +27,7 @@ One language across the whole project: **TypeScript**.
 - Checklists inside a card, with a `2/5` progress badge on the board
 - Free-form notes on a card
 - Filter by text, priority or deadline, and hide finished cards
+- Drag cards between columns and drag columns to reorder them
 - Cascading deletes: removing a workspace removes everything inside it
 
 There is no "Done" column: a card is finished when its checkbox is ticked.
@@ -89,5 +90,5 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for the full schema and the build plan.
 - [x] **Stage 1** — foundation: database schema, workspace and project API, Angular shell
 - [x] **Stage 2** — boards, columns and cards: full CRUD, done checkbox, deadlines
 - [x] **Stage 3** — notes, checklists and board filters
-- [ ] **Stage 4** — drag & drop, polish, deployment
+- [x] **Stage 4** — drag & drop and polish (deployment prepared, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md))
 - [ ] **Stage 5** — desktop app: a double-clickable icon instead of a localhost URL
