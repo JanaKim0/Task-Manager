@@ -121,5 +121,7 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for the full schema and the build plan.
 
 Built by **Jana Kim** — [github.com/JanaKim0](https://github.com/JanaKim0)
 
+Testing By Totti.
+
 Licensed under the [MIT License](LICENSE). Written with AI assistance
 (Claude).
