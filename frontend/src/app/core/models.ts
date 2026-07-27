@@ -20,6 +20,8 @@ export interface Workspace {
   _count?: { projects: number };
   // present in the detail response only
   projects?: Project[];
+  /** Something inside is due within two days, or already overdue. */
+  dueSoon?: boolean;
 }
 
 export interface Project {
@@ -36,6 +38,8 @@ export interface Project {
   workspace?: Pick<Workspace, 'id' | 'name' | 'slug'>;
   boards?: Board[];
   _count?: { boards: number };
+  /** Something inside is due within two days, or already overdue. */
+  dueSoon?: boolean;
 }
 
 export interface Board {

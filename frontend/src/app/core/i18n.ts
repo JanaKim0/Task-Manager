@@ -188,6 +188,8 @@ const en = {
     tomorrow: 'Tomorrow',
     oneDayLate: '1 day late',
     daysLate: '{count} days late',
+    /** The dot on a workspace or project card. */
+    atRisk: 'Something inside is due within two days',
   },
 
   errors: {
@@ -365,6 +367,7 @@ const ru: Dictionary = {
     tomorrow: 'Завтра',
     oneDayLate: 'просрочено на 1 день',
     daysLate: 'просрочено на {count} дн.',
+    atRisk: 'Внутри есть дедлайн в ближайшие два дня',
   },
 
   errors: {

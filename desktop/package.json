@@ -1,7 +1,7 @@
 {
   "name": "task-manager-desktop",
   "productName": "Task Manager",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Task Manager — a personal task board",
   "author": "Jana Kim",
   "license": "MIT",
@@ -9,8 +9,7 @@
   "private": true,
   "scripts": {
     "start": "electron .",
-    "build:parts": "npm run icon && npm run build --prefix ../backend && npm run build:desktop --prefix ../frontend",
-    "icon": "node scripts/make-icon.js",
+    "build:parts": "npm run build --prefix ../backend && npm run build:desktop --prefix ../frontend",
     "stage": "node scripts/stage.js",
     "pack": "npm run build:parts && npm run stage && electron-builder --dir",
     "dist": "npm run build:parts && npm run stage && electron-builder"
@@ -25,13 +24,13 @@
     "copyright": "Copyright (c) 2026 Jana Kim",
     "directories": {
       "output": "release",
-      "buildResources": "build"
+      "buildResources": "assets"
     },
     "files": [
       "main.js",
       "preload.js",
       "lib/**/*",
-      "build/icon.png",
+      "assets/icon.png",
       "package.json"
     ],
     "extraResources": [
@@ -47,8 +46,7 @@
           "arch": ["x64"]
         }
       ],
-      "icon": "build/icon.png",
-      "signAndEditExecutable": false
+      "icon": "assets/icon.ico"
     },
     "nsis": {
       "oneClick": false,

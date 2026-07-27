@@ -4,23 +4,36 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { DeadlinesService } from '../deadlines/deadlines.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 
 @Injectable()
 export class ProjectsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly deadlines: DeadlinesService,
+  ) {}
 
   /** All projects, or only those inside one workspace when an id is given. */
-  findAll(workspaceId?: string) {
-    return this.prisma.project.findMany({
-      where: workspaceId ? { workspaceId } : undefined,
-      orderBy: { createdAt: 'asc' },
-      include: {
-        workspace: { select: { id: true, name: true, slug: true } },
-        _count: { select: { boards: true } },
-      },
-    });
+  async findAll(workspaceId?: string) {
+    const [projects, atRisk] = await Promise.all([
+      this.prisma.project.findMany({
+        where: workspaceId ? { workspaceId } : undefined,
+        orderBy: { createdAt: 'asc' },
+        include: {
+          workspace: { select: { id: true, name: true, slug: true } },
+          _count: { select: { boards: true } },
+        },
+      }),
+      this.deadlines.projectsAtRisk(workspaceId),
+    ]);
+
+    // dueSoon drives the dot on the card in the list.
+    return projects.map((project) => ({
+      ...project,
+      dueSoon: atRisk.has(project.id),
+    }));
   }
 
   async findOne(id: string) {

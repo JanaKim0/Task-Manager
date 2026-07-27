@@ -29,6 +29,8 @@ One language across the whole project: **TypeScript**.
 - Create, edit and delete at every level
 - Tick a card off as done, with a live "x of y done" counter
 - Optional deadline per card, colour-coded as overdue / today / soon
+- A red dot on a workspace or project when something inside is due within
+  two days, so a deadline is visible before opening the board
 - Four priority levels
 - Checklists inside a card, with a `2/5` progress badge on the board
 - Free-form notes on a card
@@ -77,7 +79,7 @@ To build one from source instead:
 cd desktop && npm install && npm run dist
 ```
 
-produces `desktop/release/Task Manager Setup 1.0.0.exe` — see
+produces `desktop/release/Task Manager Setup 1.2.0.exe` — see
 [docs/DESKTOP.md](docs/DESKTOP.md).
 
 Useful extras:

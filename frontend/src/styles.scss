@@ -188,3 +188,17 @@ h3 {
 .muted {
   color: var(--text-muted);
 }
+
+/* A quiet red dot in the top-left corner of a workspace or project card:
+   something inside runs out of time within two days, or already has.
+   The card it belongs to needs position: relative. */
+.due-dot {
+  position: absolute;
+  top: 0.55rem;
+  left: 0.55rem;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-soft);
+}

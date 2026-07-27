@@ -5,43 +5,66 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { DeadlinesService } from '../deadlines/deadlines.service';
 import { CreateWorkspaceDto } from './dto/create-workspace.dto';
 import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
 
 @Injectable()
 export class WorkspacesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly deadlines: DeadlinesService,
+  ) {}
 
-  findAll() {
-    return this.prisma.workspace.findMany({
-      orderBy: { createdAt: 'asc' },
-      // _count returns the number of related rows without loading them.
-      include: { _count: { select: { projects: true } } },
-    });
+  async findAll() {
+    const [workspaces, atRisk] = await Promise.all([
+      this.prisma.workspace.findMany({
+        orderBy: { createdAt: 'asc' },
+        // _count returns the number of related rows without loading them.
+        include: { _count: { select: { projects: true } } },
+      }),
+      this.deadlines.workspacesAtRisk(),
+    ]);
+
+    // dueSoon drives the dot on the card in the list.
+    return workspaces.map((workspace) => ({
+      ...workspace,
+      dueSoon: atRisk.has(workspace.id),
+    }));
   }
 
   async findOne(id: string) {
-    const workspace = await this.prisma.workspace.findUnique({
-      where: { id },
-      include: {
-        projects: {
-          orderBy: { createdAt: 'asc' },
-          include: {
-            // The first board is what the "Open board" link points at.
-            boards: {
-              orderBy: { order: 'asc' },
-              select: { id: true, name: true, order: true, projectId: true },
+    const [workspace, atRisk] = await Promise.all([
+      this.prisma.workspace.findUnique({
+        where: { id },
+        include: {
+          projects: {
+            orderBy: { createdAt: 'asc' },
+            include: {
+              // The first board is what the "Open board" link points at.
+              boards: {
+                orderBy: { order: 'asc' },
+                select: { id: true, name: true, order: true, projectId: true },
+              },
+              _count: { select: { boards: true } },
             },
-            _count: { select: { boards: true } },
           },
         },
-      },
-    });
+      }),
+      this.deadlines.projectsAtRisk(id),
+    ]);
 
     if (!workspace) {
       throw new NotFoundException(`Workspace ${id} not found`);
     }
-    return workspace;
+
+    return {
+      ...workspace,
+      projects: workspace.projects.map((project) => ({
+        ...project,
+        dueSoon: atRisk.has(project.id),
+      })),
+    };
   }
 
   async create(dto: CreateWorkspaceDto) {
