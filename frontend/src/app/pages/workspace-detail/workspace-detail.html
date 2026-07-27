@@ -94,6 +94,10 @@
       @for (project of projects(); track project.id) {
         <li class="card project">
           <span class="project__bar" [style.background]="project.color"></span>
+          @if (project.dueSoon) {
+            <span class="due-dot" [title]="t().due.atRisk" role="img"
+                  [attr.aria-label]="t().due.atRisk"></span>
+          }
           <div class="project__body">
             <h2 class="project__title">{{ project.name }}</h2>
             @if (project.description) {

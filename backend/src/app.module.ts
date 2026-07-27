@@ -8,11 +8,13 @@ import { CardsModule } from './cards/cards.module';
 import { NotesModule } from './notes/notes.module';
 import { ChecklistModule } from './checklist/checklist.module';
 import { HealthModule } from './health/health.module';
+import { DeadlinesModule } from './deadlines/deadlines.module';
 
 @Module({
   imports: [
     PrismaModule,
     HealthModule,
+    DeadlinesModule,
     WorkspacesModule,
     ProjectsModule,
     BoardsModule,

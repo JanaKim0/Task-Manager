@@ -80,10 +80,17 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* anchors .due-dot */
+  position: relative;
 }
 
 .project__bar {
   height: 6px;
+}
+
+/* Clear of the colour bar running along the top of the card. */
+.project .due-dot {
+  top: calc(6px + 0.45rem);
 }
 
 .project__body {

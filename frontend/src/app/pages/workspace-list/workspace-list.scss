@@ -37,6 +37,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* anchors .due-dot */
+  position: relative;
 }
 
 .ws__link {

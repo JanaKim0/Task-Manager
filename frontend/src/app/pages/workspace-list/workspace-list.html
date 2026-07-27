@@ -68,6 +68,10 @@
   <ul class="grid">
     @for (workspace of workspaces(); track workspace.id) {
       <li class="card ws">
+        @if (workspace.dueSoon) {
+          <span class="due-dot" [title]="t().due.atRisk" role="img"
+                [attr.aria-label]="t().due.atRisk"></span>
+        }
         <a class="ws__link" [routerLink]="['/workspaces', workspace.id]">
           <h2 class="ws__title">{{ workspace.name }}</h2>
           <p class="ws__slug muted">/{{ workspace.slug }}</p>
