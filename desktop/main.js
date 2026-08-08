@@ -11,7 +11,46 @@ const { loadWindowState, saveWindowState } = require('./lib/window-state');
 const paths = resolvePaths();
 
 let mainWindow = null;
+let splashWindow = null;
 let server = null;
+
+/**
+ * A small window that appears the moment Electron is ready, before the
+ * database and the server are touched.
+ *
+ * Without it the app is invisible for the first few seconds — no window, no
+ * taskbar button, nothing — and the only sensible reaction is to click the
+ * shortcut again, which starts yet another copy competing for the same disk.
+ */
+function createSplash() {
+  splashWindow = new BrowserWindow({
+    width: 320,
+    height: 170,
+    frame: false,
+    resizable: false,
+    center: true,
+    show: false,
+    skipTaskbar: false,
+    backgroundColor: '#fdf7f9',
+    title: 'Task Manager',
+    icon: path.join(__dirname, 'assets', 'icon.png'),
+    webPreferences: { nodeIntegration: false, contextIsolation: true },
+  });
+
+  splashWindow.once('ready-to-show', () => splashWindow?.show());
+  splashWindow.on('closed', () => {
+    splashWindow = null;
+  });
+
+  return splashWindow.loadFile(path.join(__dirname, 'splash.html'));
+}
+
+function closeSplash() {
+  if (splashWindow && !splashWindow.isDestroyed()) {
+    splashWindow.close();
+  }
+  splashWindow = null;
+}
 
 /**
  * Prepares the database before anything touches it:
@@ -74,7 +113,11 @@ function createWindow() {
     mainWindow.maximize();
   }
 
-  mainWindow.once('ready-to-show', () => mainWindow.show());
+  mainWindow.once('ready-to-show', () => {
+    closeSplash();
+    mainWindow.show();
+    mainWindow.focus();
+  });
 
   const persist = () => saveWindowState(paths.windowState, mainWindow);
   mainWindow.on('resize', persist);
@@ -169,12 +212,17 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(async () => {
     try {
+      // Shown first and awaited, so there is something on screen before the
+      // slow part starts.
+      await createSplash();
+
       await prepareDatabase();
       await startBackend();
       buildMenu();
       createWindow();
     } catch (error) {
       console.error(error);
+      closeSplash();
       dialog.showErrorBox(
         'Task Manager could not start',
         `${error?.message ?? error}\n\n` +

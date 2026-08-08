@@ -22,6 +22,49 @@ const FRONTEND_BUILD = path.join(ROOT, 'frontend', 'dist', 'frontend', 'browser'
 const OUT = path.join(DESKTOP, 'app-content');
 const OUT_BACKEND = path.join(OUT, 'backend');
 
+/**
+ * Packages npm installs but the running app never loads.
+ *
+ * `@prisma/client` declares `prisma` and `typescript` as optional peer
+ * dependencies, and npm installs optional peers by default — so the Prisma
+ * CLI and the TypeScript compiler end up in a production install, dragging
+ * their own dependencies along with them. None of it is reachable at
+ * runtime: the generated client requires exactly one thing,
+ * `@prisma/client/runtime/library.js`, plus `fs` and `path`.
+ *
+ * Everything here is checked by the smoke test at the end of this script,
+ * which starts the real server against a real database. If a future version
+ * of Prisma starts needing one of these, the build fails instead of
+ * producing an app that cannot open.
+ */
+const DROP_PACKAGES = [
+  // The Prisma CLI: migrations are applied by desktop/lib/migrate.js instead.
+  'prisma',
+  // Peer of @prisma/client, used only to type-check code that imports it.
+  'typescript',
+  // Pulled in by the Prisma CLI, nothing else.
+  'effect',
+  '@effect',
+  'jiti',
+  'fast-check',
+  'pure-rand',
+  // CLI-side Prisma helpers: engine downloading, platform detection, config.
+  '@prisma/config',
+  '@prisma/debug',
+  '@prisma/engines',
+  '@prisma/engines-version',
+  '@prisma/fetch-engine',
+  '@prisma/get-platform',
+];
+
+/** Query engines for databases this app does not use. ~23 MB of base64. */
+const FOREIGN_ENGINE_PREFIXES = [
+  'query_engine_bg.cockroachdb',
+  'query_engine_bg.mysql',
+  'query_engine_bg.postgresql',
+  'query_engine_bg.sqlserver',
+];
+
 function log(message) {
   console.log(`[stage] ${message}`);
 }
@@ -49,6 +92,98 @@ function copyDir(from, to, skip = () => false) {
       fs.copyFileSync(source, target);
     }
   }
+}
+
+function countFiles(dir) {
+  let files = 0;
+  let bytes = 0;
+
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const target = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      const inner = countFiles(target);
+      files += inner.files;
+      bytes += inner.bytes;
+    } else {
+      files += 1;
+      bytes += fs.statSync(target).size;
+    }
+  }
+
+  return { files, bytes };
+}
+
+function describe(dir) {
+  const { files, bytes } = countFiles(dir);
+  return `${files} files, ${Math.round(bytes / 1024 / 1024)} MB`;
+}
+
+function remove(target) {
+  fs.rmSync(target, { recursive: true, force: true });
+}
+
+/**
+ * Throws away everything the installed app carries but never opens.
+ *
+ * This is not housekeeping. Windows Defender scans every file an
+ * application touches on a cold start, and the difference between eleven
+ * thousand files and one thousand is the difference between a shortcut that
+ * seems broken and one that opens.
+ */
+function prune() {
+  const modules = path.join(OUT_BACKEND, 'node_modules');
+
+  for (const name of DROP_PACKAGES) {
+    remove(path.join(modules, name));
+  }
+
+  // Copies of the query engine left behind by interrupted `prisma generate`
+  // runs. They are 20 MB each and there can be several.
+  const generated = path.join(modules, '.prisma', 'client');
+  for (const name of fs.readdirSync(generated)) {
+    if (/\.tmp\d+$/.test(name)) {
+      remove(path.join(generated, name));
+    }
+  }
+
+  const runtime = path.join(modules, '@prisma', 'client', 'runtime');
+  if (fs.existsSync(runtime)) {
+    for (const name of fs.readdirSync(runtime)) {
+      if (FOREIGN_ENGINE_PREFIXES.some((prefix) => name.startsWith(prefix))) {
+        remove(path.join(runtime, name));
+      }
+    }
+  }
+
+  // Type declarations and source maps are for editors and debuggers; neither
+  // is present when the packaged app runs.
+  dropByExtension(modules, ['.d.ts', '.d.mts', '.d.cts', '.map']);
+}
+
+function dropByExtension(dir, extensions) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const target = path.join(dir, entry.name);
+
+    if (entry.isDirectory()) {
+      dropByExtension(target, extensions);
+    } else if (extensions.some((extension) => entry.name.endsWith(extension))) {
+      fs.rmSync(target, { force: true });
+    }
+  }
+}
+
+/**
+ * Starts the staged server for real, against a throwaway database, and asks
+ * it for the workspace list.
+ *
+ * A shorter check — "does the file exist" — would pass on a build that
+ * cannot load the query engine. This one fails on it.
+ */
+function smokeTest() {
+  execSync(`node "${path.join(__dirname, 'smoke.js')}"`, {
+    cwd: DESKTOP,
+    stdio: 'inherit',
+  });
 }
 
 function main() {
@@ -103,10 +238,20 @@ function main() {
   copyDir(
     path.join(BACKEND, 'node_modules', '.prisma'),
     path.join(OUT_BACKEND, 'node_modules', '.prisma'),
+    // Leftovers from interrupted `prisma generate` runs: 20 MB each.
+    (name) => /\.tmp\d+$/.test(name),
   );
 
   log('copying the built UI');
   copyDir(FRONTEND_BUILD, path.join(OUT, 'frontend'));
+
+  log(`before pruning: ${describe(OUT)}`);
+  log('dropping build-time packages');
+  prune();
+  log(`after pruning:  ${describe(OUT)}`);
+
+  log('smoke test: starting the staged server');
+  smokeTest();
 
   log(`done: ${OUT}`);
 }

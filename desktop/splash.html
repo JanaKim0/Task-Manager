@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Task Manager</title>
+    <style>
+      /* Deliberately self-contained: this file has to paint before anything
+         else in the app exists, so it loads no fonts, images or scripts. */
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.9rem;
+        background: #fdf7f9;
+        border: 1px solid #f0d6e0;
+        border-radius: 12px;
+        color: #4a3b41;
+        font: 400 14px/1.4 "Segoe UI", system-ui, sans-serif;
+        user-select: none;
+        -webkit-app-region: drag;
+      }
+
+      .name {
+        font-size: 1.15rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+
+      .bar {
+        width: 148px;
+        height: 4px;
+        border-radius: 999px;
+        background: #f3dfe7;
+        overflow: hidden;
+      }
+
+      /* A sweep rather than a percentage: the app cannot honestly say how
+         far along it is, only that it is still working. */
+      .bar::after {
+        content: "";
+        display: block;
+        width: 45%;
+        height: 100%;
+        border-radius: 999px;
+        background: #e8749c;
+        animation: sweep 1.1s ease-in-out infinite;
+      }
+
+      @keyframes sweep {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(222%);
+        }
+      }
+
+      .hint {
+        font-size: 0.8rem;
+        color: #9b8790;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="name">Task Manager</div>
+    <div class="bar"></div>
+    <div class="hint" id="hint">Starting…</div>
+    <script>
+      // The one place the splash needs the language: it is up before the
+      // Angular app that would normally decide this.
+      if ((navigator.language || "").toLowerCase().startsWith("ru")) {
+        document.getElementById("hint").textContent = "Запускается…";
+      }
+    </script>
+  </body>
+</html>

@@ -11,11 +11,28 @@ and the NestJS API runs in the same process rather than in a second terminal.
 
 ```
 Task Manager.exe
+ ├── splash window    ──► shown immediately, closed when the real one opens
  ├── Electron window  ──► http://localhost:<free port>
  └── NestJS server    ──► serves the UI *and* /api, reads the database
                               │
                               └── %APPDATA%\Task Manager\task-manager.db
 ```
+
+## Why there is a splash window
+
+Starting this app is not instant: it copies the database aside, checks the
+schema, boots a NestJS server and only then loads the interface. The main
+window is deliberately kept hidden until the page is painted, which avoids
+the white flash — but it also meant that for the first few seconds a click
+on the shortcut produced *nothing at all*. No window, no taskbar button.
+
+The natural response to that is to click again, and each extra click starts
+another copy of Electron. They all lose the single-instance lock and quit,
+but not before competing for the same disk with the one that is actually
+working, which makes the wait longer still.
+
+`splash.html` is a plain file with no scripts, fonts or images, so it can be
+on screen before any of the slow work begins. One click, something happens.
 
 ---
 
@@ -104,8 +121,38 @@ electron-builder. The result is:
 desktop/release/Task Manager Setup 1.2.0.exe
 ```
 
-Roughly 150 MB — an Electron app carries its own copy of Chromium, and
-Prisma ships a 20 MB query engine.
+An Electron app carries its own copy of Chromium, and Prisma ships a 20 MB
+query engine, so it will never be small.
+
+### What is thrown away before packing
+
+`npm ci --omit=dev` is not enough on its own. `@prisma/client` declares
+`prisma` and `typescript` as *optional peer dependencies*, and npm installs
+optional peers by default — so a production install quietly contains the
+Prisma CLI and the TypeScript compiler, each with their own dependencies.
+Interrupted `prisma generate` runs also leave 20 MB copies of the query
+engine named `query_engine-windows.dll.node.tmp1234` sitting next to the
+real one, and those were being copied in too.
+
+Together that was 11 372 files and 308 MB, of which the app opens about a
+tenth. It matters because Windows Defender scans what an application touches
+on a cold start: the first launch of the day was reading through a quarter
+of a gigabyte of packages that are never loaded.
+
+`stage.js` now deletes them (`DROP_PACKAGES`) and the staged app comes to
+**3 912 files, 72 MB**.
+
+Deleting things an application might need is only safe if something checks.
+`scripts/smoke.js` runs at the end of every build: it starts the staged
+server against a throwaway database, applies the migrations, asks for
+`/api/workspaces` and loads the UI. A package that turns out to be needed
+after all fails the build instead of shipping.
+
+```bash
+cd desktop && node scripts/smoke.js
+```
+
+runs it on its own against whatever is currently staged.
 
 The installer asks where to install, creates a desktop shortcut and a Start
 menu entry, and installs for the current user (no administrator rights
