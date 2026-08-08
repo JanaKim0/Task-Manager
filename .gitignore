@@ -23,7 +23,7 @@ build/
 npm-debug.log*
 
 # локальные настройки Claude Code (у каждого свои)
-.claude/settings.local.json
+.claude/
 
 # редакторы / ОС
 .DS_Store
