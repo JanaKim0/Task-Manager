@@ -128,5 +128,6 @@ Built by **Jana Kim** — [github.com/JanaKim0](https://github.com/JanaKim0)
 
 Testing By Totti.
 
-Licensed under the [MIT License](LICENSE). Written with AI assistance
-(Claude).
+Licensed under the [MIT License](LICENSE).
+
+Built with the help of **Claude** (Anthropic).
