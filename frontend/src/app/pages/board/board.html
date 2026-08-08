@@ -247,7 +247,13 @@
                 />
               </label>
 
+              <!-- Reading order: when it is due, what it is, what was
+                   written about it, how urgent, and where it stands. -->
               <div class="task__body" (click)="openEditor(card)">
+                @if (card.dueDate) {
+                  <p class="task__date">{{ dueDateLabel(card) }}</p>
+                }
+
                 <p class="task__title">{{ card.title }}</p>
 
                 @if (notePreview(card); as preview) {
@@ -255,16 +261,6 @@
                 }
 
                 <div class="task__meta">
-                  @if (card.dueDate) {
-                    <span
-                      class="due"
-                      [class.due--overdue]="dueState(card) === 'overdue'"
-                      [class.due--today]="dueState(card) === 'today'"
-                      [class.due--soon]="dueState(card) === 'soon'"
-                    >
-                      {{ dueLabel(card) }}
-                    </span>
-                  }
                   <span class="prio" [class]="'prio--' + card.priority.toLowerCase()">
                     {{ priorityLabel(card.priority) }}
                   </span>
@@ -283,6 +279,20 @@
                     </span>
                   }
                 </div>
+
+                @if (card.dueDate) {
+                  <div class="task__meta">
+                    <span
+                      class="due"
+                      [class.due--done]="dueState(card) === 'done'"
+                      [class.due--overdue]="dueState(card) === 'overdue'"
+                      [class.due--today]="dueState(card) === 'today'"
+                      [class.due--soon]="dueState(card) === 'soon'"
+                    >
+                      {{ dueStatusLabel(card) }}
+                    </span>
+                  </div>
+                }
               </div>
 
               <div class="task__actions">
@@ -387,6 +397,8 @@
       </button>
     </header>
 
+    <!-- Everything lives inside the one form so that Save can sit at the
+         very bottom, after the last thing there is to fill in. -->
     <form [formGroup]="cardForm" (ngSubmit)="saveCard()">
       <div class="field">
         <label for="title">{{ t().card.titleLabel }}</label>
@@ -396,10 +408,93 @@
         }
       </div>
 
-      <div class="field">
-        <label for="desc">{{ t().common.description }}</label>
-        <textarea id="desc" formControlName="description" rows="3"></textarea>
-      </div>
+      <!-- Notes take the place the description box used to hold: one kind of
+           free text per card, and this is the kind the board shows. -->
+      <section class="sub sub--flush">
+        <h3 class="sub__title">{{ t().card.notes }}</h3>
+
+        <div class="sub__add">
+          <textarea
+            rows="3"
+            [placeholder]="t().card.notePlaceholder"
+            [value]="newNote()"
+            (input)="newNote.set($any($event.target).value)"
+          ></textarea>
+          <button
+            class="btn btn--sm"
+            type="button"
+            [disabled]="!newNote().trim()"
+            (click)="addNote()"
+          >
+            {{ t().common.add }}
+          </button>
+        </div>
+
+        @if (editorLoading()) {
+          <p class="muted sub__empty">{{ t().card.notesLoading }}</p>
+        } @else if (notes().length === 0) {
+          <p class="muted sub__empty">{{ t().card.notesEmpty }}</p>
+        } @else {
+          <ul class="notes">
+            @for (note of notes(); track note.id) {
+              <li class="note">
+                @if (editingNote() === note.id) {
+                  <div class="note__editor">
+                    <textarea
+                      rows="3"
+                      [value]="editedNoteBody()"
+                      (input)="editedNoteBody.set($any($event.target).value)"
+                      (keydown.escape)="cancelEditNote()"
+                    ></textarea>
+                    <div class="note__actions">
+                      <button
+                        class="btn btn--primary btn--sm"
+                        type="button"
+                        [disabled]="!editedNoteBody().trim()"
+                        (click)="saveNote(note)"
+                      >
+                        {{ t().card.noteSave }}
+                      </button>
+                      <button
+                        class="btn btn--ghost btn--sm"
+                        type="button"
+                        (click)="cancelEditNote()"
+                      >
+                        {{ t().common.cancel }}
+                      </button>
+                    </div>
+                  </div>
+                } @else {
+                  <div class="note__content" (click)="startEditNote(note)">
+                    <p class="note__body">{{ note.body }}</p>
+                    @if (noteDate(note); as date) {
+                      <span class="note__date muted">{{ date }}</span>
+                    }
+                  </div>
+                  <span class="note__buttons">
+                    <button
+                      class="btn btn--ghost btn--sm"
+                      type="button"
+                      [title]="t().card.noteEdit"
+                      (click)="startEditNote(note)"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      class="btn btn--ghost btn--sm"
+                      type="button"
+                      [title]="t().common.delete"
+                      (click)="removeNote(note)"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </section>
 
       <div class="dialog__row">
         <div class="field">
@@ -428,6 +523,62 @@
         </div>
       </div>
 
+      <!-- Checklist -->
+      <section class="sub">
+        <h3 class="sub__title">
+          {{ t().card.checklist }}
+          @if (editorProgress(); as progress) {
+            <span class="muted">{{ progress }}</span>
+          }
+        </h3>
+
+        @if (checklist().length === 0 && !editorLoading()) {
+          <p class="muted sub__empty">{{ t().card.checklistEmpty }}</p>
+        }
+
+        <ul class="checklist">
+          @for (item of checklist(); track item.id) {
+            <li class="checklist__item" [class.checklist__item--done]="item.done">
+              <input
+                type="checkbox"
+                [checked]="item.done"
+                (change)="toggleChecklistItem(item)"
+                [attr.aria-label]="item.text"
+              />
+              <span class="checklist__text">{{ item.text }}</span>
+              <button
+                class="btn btn--ghost btn--sm"
+                type="button"
+                [title]="t().common.delete"
+                (click)="removeChecklistItem(item)"
+              >
+                ✕
+              </button>
+            </li>
+          }
+        </ul>
+
+        <div class="sub__add">
+          <!-- Enter adds a step. Without preventDefault it would also submit
+               the surrounding form and close the dialog. -->
+          <input
+            [placeholder]="t().card.checklistPlaceholder"
+            [value]="newChecklistItem()"
+            (input)="newChecklistItem.set($any($event.target).value)"
+            (keydown.enter)="$event.preventDefault(); addChecklistItem()"
+          />
+          <button
+            class="btn btn--sm"
+            type="button"
+            [disabled]="!newChecklistItem().trim()"
+            (click)="addChecklistItem()"
+          >
+            {{ t().common.add }}
+          </button>
+        </div>
+      </section>
+
+      <!-- Last thing in the dialog, so Save is where the form ends. -->
       <footer class="dialog__foot">
         <span class="muted">
           {{ card.done ? t().card.markedDone : t().card.notDone }}
@@ -442,145 +593,5 @@
         </span>
       </footer>
     </form>
-
-    <!-- Checklist -->
-    <section class="sub">
-      <h3 class="sub__title">
-        {{ t().card.checklist }}
-        @if (editorProgress(); as progress) {
-          <span class="muted">{{ progress }}</span>
-        }
-      </h3>
-
-      @if (checklist().length === 0 && !editorLoading()) {
-        <p class="muted sub__empty">{{ t().card.checklistEmpty }}</p>
-      }
-
-      <ul class="checklist">
-        @for (item of checklist(); track item.id) {
-          <li class="checklist__item" [class.checklist__item--done]="item.done">
-            <input
-              type="checkbox"
-              [checked]="item.done"
-              (change)="toggleChecklistItem(item)"
-              [attr.aria-label]="item.text"
-            />
-            <span class="checklist__text">{{ item.text }}</span>
-            <button
-              class="btn btn--ghost btn--sm"
-              type="button"
-              [title]="t().common.delete"
-              (click)="removeChecklistItem(item)"
-            >
-              ✕
-            </button>
-          </li>
-        }
-      </ul>
-
-      <div class="sub__add">
-        <input
-          [placeholder]="t().card.checklistPlaceholder"
-          [value]="newChecklistItem()"
-          (input)="newChecklistItem.set($any($event.target).value)"
-          (keydown.enter)="addChecklistItem()"
-        />
-        <button
-          class="btn btn--sm"
-          type="button"
-          [disabled]="!newChecklistItem().trim()"
-          (click)="addChecklistItem()"
-        >
-          {{ t().common.add }}
-        </button>
-      </div>
-    </section>
-
-    <!-- Notes -->
-    <section class="sub">
-      <h3 class="sub__title">{{ t().card.notes }}</h3>
-
-      <div class="sub__add">
-        <textarea
-          rows="2"
-          [placeholder]="t().card.notePlaceholder"
-          [value]="newNote()"
-          (input)="newNote.set($any($event.target).value)"
-        ></textarea>
-        <button
-          class="btn btn--sm"
-          type="button"
-          [disabled]="!newNote().trim()"
-          (click)="addNote()"
-        >
-          {{ t().common.add }}
-        </button>
-      </div>
-
-      @if (editorLoading()) {
-        <p class="muted sub__empty">{{ t().card.notesLoading }}</p>
-      } @else if (notes().length === 0) {
-        <p class="muted sub__empty">{{ t().card.notesEmpty }}</p>
-      } @else {
-        <ul class="notes">
-          @for (note of notes(); track note.id) {
-            <li class="note">
-              @if (editingNote() === note.id) {
-                <div class="note__editor">
-                  <textarea
-                    rows="3"
-                    [value]="editedNoteBody()"
-                    (input)="editedNoteBody.set($any($event.target).value)"
-                    (keydown.escape)="cancelEditNote()"
-                  ></textarea>
-                  <div class="note__actions">
-                    <button
-                      class="btn btn--primary btn--sm"
-                      type="button"
-                      [disabled]="!editedNoteBody().trim()"
-                      (click)="saveNote(note)"
-                    >
-                      {{ t().card.noteSave }}
-                    </button>
-                    <button
-                      class="btn btn--ghost btn--sm"
-                      type="button"
-                      (click)="cancelEditNote()"
-                    >
-                      {{ t().common.cancel }}
-                    </button>
-                  </div>
-                </div>
-              } @else {
-                <div class="note__content" (click)="startEditNote(note)">
-                  <p class="note__body">{{ note.body }}</p>
-                  @if (noteDate(note); as date) {
-                    <span class="note__date muted">{{ date }}</span>
-                  }
-                </div>
-                <span class="note__buttons">
-                  <button
-                    class="btn btn--ghost btn--sm"
-                    type="button"
-                    [title]="t().card.noteEdit"
-                    (click)="startEditNote(note)"
-                  >
-                    ✎
-                  </button>
-                  <button
-                    class="btn btn--ghost btn--sm"
-                    type="button"
-                    [title]="t().common.delete"
-                    (click)="removeNote(note)"
-                  >
-                    ✕
-                  </button>
-                </span>
-              }
-            </li>
-          }
-        </ul>
-      }
-    </section>
   </div>
 }

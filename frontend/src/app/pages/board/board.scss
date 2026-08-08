@@ -371,8 +371,19 @@
   overflow-wrap: anywhere;
 }
 
-/* Preview of the newest note: smaller and lighter than the title, so the
-   card still reads title-first. Cut off after three lines. */
+/* The deadline, above the title: the first thing worth knowing about a card
+   is when it is due. */
+.task__date {
+  margin: 0 0 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+}
+
+/* The newest note: smaller and lighter than the title, so the card still
+   reads title-first. Shown in full — the point of putting it here is not
+   having to open the card to read it. */
 .task__note {
   margin: 0.3rem 0 0;
   font-size: 0.84rem;
@@ -380,11 +391,6 @@
   color: var(--text-muted);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .task__meta {
@@ -436,6 +442,14 @@
   background: var(--danger);
   border-color: var(--danger);
   color: #fff;
+}
+
+/* Finished. Green rather than red — the deadline stopped mattering the
+   moment the card was ticked. */
+.due--done {
+  background: #edf7ee;
+  border-color: #cfe6d2;
+  color: #2f6b39;
 }
 
 /* ---------- loading skeleton ---------- */
@@ -689,7 +703,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding-top: 0.4rem;
+  margin-top: 1.25rem;
+  padding-top: 0.9rem;
   border-top: 1px solid var(--border);
   font-size: 0.82rem;
 }
@@ -705,6 +720,15 @@
   margin-top: 1.25rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border);
+}
+
+/* The notes block sits directly under the title, in the place the old
+   description box had. It is part of the same run of fields, so it gets no
+   dividing line above it. */
+.sub--flush {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }
 
 .sub__title {

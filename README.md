@@ -28,12 +28,15 @@ One language across the whole project: **TypeScript**.
 - Workspaces, projects, boards, columns and cards
 - Create, edit and delete at every level
 - Tick a card off as done, with a live "x of y done" counter
-- Optional deadline per card, colour-coded as overdue / today / soon
+- Optional deadline per card: the date at the top, and underneath it where
+  that deadline stands — *today*, *3 days late*, or simply *done* once the
+  card is ticked, colour-coded to match
 - A red dot on a workspace or project when something inside is due within
   two days, so a deadline is visible before opening the board
 - Four priority levels
 - Checklists inside a card, with a `2/5` progress badge on the board
-- Free-form notes on a card
+- Free-form notes on a card, the newest one shown in full on the board so
+  what you wrote is readable without opening anything
 - Filter by text, priority or deadline, and hide finished cards
 - Drag cards between columns and drag columns to reorder them
 - English and Russian interface, switched without reloading the page

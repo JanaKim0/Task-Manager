@@ -29,8 +29,13 @@ import { ConfirmService } from '../../core/confirm.service';
 import { SettingsService } from '../../core/settings.service';
 import { fill } from '../../core/i18n';
 
-/** How a deadline should be shown to the user. */
-type DueState = 'overdue' | 'today' | 'soon' | 'later' | 'none';
+/**
+ * How a deadline should be shown to the user.
+ *
+ * `done` wins over everything else: once a card is ticked off, saying it is
+ * five days late is no longer useful — it is finished.
+ */
+type DueState = 'done' | 'overdue' | 'today' | 'soon' | 'later' | 'none';
 
 @Component({
   selector: 'app-board',
@@ -194,9 +199,10 @@ export class BoardComponent implements OnInit {
     return `${items.filter((i) => i.done).length}/${items.length}`;
   });
 
+  // No description field: a card has notes, and two boxes of free text on the
+  // same card only ever compete with each other.
   readonly cardForm = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.minLength(1)]],
-    description: [''],
     dueDate: [''],
     priority: ['MEDIUM' as Priority, Validators.required],
   });
@@ -258,7 +264,10 @@ export class BoardComponent implements OnInit {
 
     const search = filters.search.trim().toLowerCase();
     if (search) {
-      const haystack = `${card.title} ${card.description ?? ''}`.toLowerCase();
+      // The title and the note shown underneath it — searching matches what
+      // is actually on the card.
+      const haystack =
+        `${card.title} ${this.notePreview(card) ?? ''}`.toLowerCase();
       if (!haystack.includes(search)) {
         return false;
       }
@@ -542,7 +551,6 @@ export class BoardComponent implements OnInit {
     this.editingCard.set(card);
     this.cardForm.setValue({
       title: card.title,
-      description: card.description ?? '',
       dueDate: this.toDateInput(card.dueDate),
       priority: card.priority,
     });
@@ -584,19 +592,26 @@ export class BoardComponent implements OnInit {
     }
 
     this.saving.set(true);
-    const { title, description, dueDate, priority } = this.cardForm.getRawValue();
+    const { title, dueDate, priority } = this.cardForm.getRawValue();
 
     this.api
       .updateCard(card.id, {
         title: title.trim(),
-        description: description.trim() || null,
         // An empty input means "no deadline", which the API takes as null.
         dueDate: dueDate ? this.fromDateInput(dueDate) : null,
         priority,
       })
       .subscribe({
         next: (updated) => {
-          this.replaceCard({ ...updated, checklist: this.checklist() });
+          // The update response carries the checklist and the note count but
+          // not the note itself, and the note is what the board shows under
+          // the title. Saving a card must not blank it.
+          const newest = this.notes()[0];
+          this.replaceCard({
+            ...updated,
+            checklist: this.checklist(),
+            notes: newest ? [{ id: newest.id, body: newest.body }] : [],
+          });
           this.saving.set(false);
           this.closeEditor();
         },
@@ -617,8 +632,14 @@ export class BoardComponent implements OnInit {
     this.replaceCard({ ...card, done: !card.done });
 
     this.api.toggleCard(card.id).subscribe({
+      // Same as saveCard: the response has no note, so keep the one already
+      // on screen rather than replacing it with nothing.
       next: (updated) =>
-        this.replaceCard({ ...updated, checklist: card.checklist }),
+        this.replaceCard({
+          ...updated,
+          checklist: card.checklist,
+          notes: card.notes,
+        }),
       error: (err: HttpErrorResponse) => {
         this.replaceCard(card);
         this.error.set(readHttpError(err, this.settings.language()));
@@ -839,8 +860,10 @@ export class BoardComponent implements OnInit {
     if (!card.dueDate) {
       return 'none';
     }
+    // A ticked card is finished. Whether it was handed in late is history,
+    // not a warning to keep showing in red.
     if (card.done) {
-      return 'later';
+      return 'done';
     }
 
     const diff = this.daysUntil(card.dueDate);
@@ -850,23 +873,41 @@ export class BoardComponent implements OnInit {
     return 'later';
   }
 
-  /** Short human label: "Today", "Tomorrow", "2 days late", "24 Jul". */
-  dueLabel(card: Card): string {
+  /**
+   * The deadline itself, as a plain date: "1.1.2026".
+   *
+   * It sits at the top of the card so the date is readable at a glance —
+   * "in 3 days" answers a different question than "when exactly".
+   */
+  dueDateLabel(card: Card): string {
+    if (!card.dueDate) {
+      return '';
+    }
+
+    return new Date(card.dueDate).toLocaleDateString(
+      this.settings.dateLocale(),
+      { day: 'numeric', month: 'numeric', year: 'numeric' },
+    );
+  }
+
+  /** Where that deadline stands: "Done", "3 days late", "Today". */
+  dueStatusLabel(card: Card): string {
     if (!card.dueDate) {
       return '';
     }
 
     const text = this.t().due;
+    if (card.done) {
+      return text.done;
+    }
+
     const diff = this.daysUntil(card.dueDate);
     if (diff === 0) return text.today;
     if (diff === 1) return text.tomorrow;
     if (diff === -1) return text.oneDayLate;
     if (diff < -1) return fill(text.daysLate, { count: Math.abs(diff) });
 
-    return new Date(card.dueDate).toLocaleDateString(this.settings.dateLocale(), {
-      day: 'numeric',
-      month: 'short',
-    });
+    return fill(text.inDays, { count: diff });
   }
 
   noteDate(note: Note): string {

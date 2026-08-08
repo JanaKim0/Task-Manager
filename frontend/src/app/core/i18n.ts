@@ -164,7 +164,7 @@ const en = {
     deleteMessage: 'The card, its notes and its checklist will be removed.',
     deleteConfirm: 'Delete card',
     checklist: 'Checklist',
-    checklistEmpty: 'Break the task into steps.',
+    checklistEmpty: 'No steps yet.',
     checklistPlaceholder: 'Add a step...',
     checklistTooltip: 'Checklist',
     notes: 'Notes',
@@ -188,6 +188,12 @@ const en = {
     tomorrow: 'Tomorrow',
     oneDayLate: '1 day late',
     daysLate: '{count} days late',
+    /**
+     * The line under the priority on a card. A ticked card is done — the
+     * deadline it may have missed is no longer news.
+     */
+    done: 'Done',
+    inDays: 'in {count} days',
     /** The dot on a workspace or project card. */
     atRisk: 'Something inside is due within two days',
   },
@@ -343,7 +349,7 @@ const ru: Dictionary = {
     deleteMessage: 'Карточка, её заметки и чек-лист будут удалены.',
     deleteConfirm: 'Удалить карточку',
     checklist: 'Чек-лист',
-    checklistEmpty: 'Разбейте задачу на шаги.',
+    checklistEmpty: 'Шагов пока нет.',
     checklistPlaceholder: 'Добавить шаг...',
     checklistTooltip: 'Чек-лист',
     notes: 'Заметки',
@@ -365,8 +371,10 @@ const ru: Dictionary = {
   due: {
     today: 'Сегодня',
     tomorrow: 'Завтра',
-    oneDayLate: 'просрочено на 1 день',
-    daysLate: 'просрочено на {count} дн.',
+    oneDayLate: 'Просрочено на 1 день',
+    daysLate: 'Просрочено на {count} дн.',
+    done: 'Выполнено',
+    inDays: 'Через {count} дн.',
     atRisk: 'Внутри есть дедлайн в ближайшие два дня',
   },
 
